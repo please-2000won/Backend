@@ -1,5 +1,7 @@
 package com.example.peerfolio.domain.test.controller;
 
+import com.example.peerfolio.global.apiPayload.ApiResponse;
+import com.example.peerfolio.global.apiPayload.code.GeneralSuccessCode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,7 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
 
 	@GetMapping
-	public String test() {
-		return "peerfolio server is running";
+	public ApiResponse<String> test() {
+		return ApiResponse.onSuccess(
+				GeneralSuccessCode.OK,
+				"peerfolio server is running"
+		);
 	}
 }
