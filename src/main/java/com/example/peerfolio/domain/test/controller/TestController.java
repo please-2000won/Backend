@@ -14,7 +14,7 @@ public class TestController {
 	public ApiResponse<String> test() {
 		return ApiResponse.onSuccess(
 				GeneralSuccessCode.OK,
-				"peerfolio server is running"
+				"peerfolio test api is running"
 		);
 	}
 }
