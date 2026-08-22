@@ -1,14 +1,17 @@
 # Peerfolio
 
 ## 📁 프로젝트 구조
+```text
 src/main/java/~~
-├── 기능
-    ├── code(errorCode)
+└── 기능
+    ├── code
+    │   └── ErrorCode
     ├── controller
-    └── entity
-    └── dto
-    └── serivce
+    ├── entity
+    ├── dto
+    ├── service
     └── repository
+```
     
 ## 🌿 Branch Convention
 
