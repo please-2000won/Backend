@@ -1,7 +1,9 @@
 package com.example.peerfolio.domain.auth.controller;
 
+import com.example.peerfolio.domain.auth.dto.request.EmailCodeRequest;
 import com.example.peerfolio.domain.auth.dto.request.SignupRequest;
 import com.example.peerfolio.domain.auth.dto.request.LoginRequest;
+import com.example.peerfolio.domain.auth.dto.response.EmailCodeResponse;
 import com.example.peerfolio.domain.auth.dto.response.LoginResponse;
 import com.example.peerfolio.domain.auth.dto.response.SignupResponse;
 import com.example.peerfolio.domain.auth.service.AuthService;
@@ -25,6 +27,14 @@ public class AuthController {
 			@RequestBody SignupRequest request
 	) {
 		SignupResponse response = authService.signup(request);
+		return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
+	}
+
+	@PostMapping("/email-code")
+	public ApiResponse<EmailCodeResponse> sendEmailCode(
+			@RequestBody EmailCodeRequest request
+	) {
+		EmailCodeResponse response = authService.sendEmailCode(request);
 		return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
 	}
 
