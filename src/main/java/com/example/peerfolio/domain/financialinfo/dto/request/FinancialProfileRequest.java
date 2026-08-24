@@ -1,6 +1,7 @@
 package com.example.peerfolio.domain.financialinfo.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -10,6 +11,7 @@ public record FinancialProfileRequest(
 		@Schema(description = "나이. 나이대는 저장하지 않고 추후 매칭/AI 분석에서 age 기준으로 계산합니다.", example = "24")
 		@NotNull(message = "나이는 필수입니다.")
 		@Positive(message = "나이는 0보다 커야 합니다.")
+		@Max(value = 120, message = "나이는 120 이하여야 합니다.")
 		Integer age,
 
 		@Schema(description = "월수입", example = "2500000")

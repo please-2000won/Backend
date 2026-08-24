@@ -217,6 +217,64 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.code").value("COMMON400"));
 	}
 
+	@Test
+	void putFinancialInfoFailsWhenAgeExceedsLimit() throws Exception {
+		// when & then: 나이가 허용 범위를 초과하면 요청 검증에 실패한다.
+		mockMvc.perform(put("/api/v1/financial-info")
+						.header(HttpHeaders.AUTHORIZATION, authorization)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "financialProfile": {
+								    "age": 121,
+								    "monthlyIncome": 2500000,
+								    "fixedExpense": 900000,
+								    "savingsGoal": 700000,
+								    "totalAssetAmount": 12000000,
+								    "totalDebtAmount": 3000000
+								  },
+								  "financialAsset": {
+								    "depositBondAmount": 6000000,
+								    "domesticStockAmount": 3000000,
+								    "foreignStockAmount": 2000000,
+								    "alternativeAmount": 1000000
+								  }
+								}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("COMMON400"));
+	}
+
+	@Test
+	void putFinancialInfoFailsWhenRequestTypeIsInvalid() throws Exception {
+		// when & then: JSON 타입이 맞지 않으면 400 공통 응답을 반환한다.
+		mockMvc.perform(put("/api/v1/financial-info")
+						.header(HttpHeaders.AUTHORIZATION, authorization)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "financialProfile": {
+								    "age": "twenty-four",
+								    "monthlyIncome": 2500000,
+								    "fixedExpense": 900000,
+								    "savingsGoal": 700000,
+								    "totalAssetAmount": 12000000,
+								    "totalDebtAmount": 3000000
+								  },
+								  "financialAsset": {
+								    "depositBondAmount": 6000000,
+								    "domesticStockAmount": 3000000,
+								    "foreignStockAmount": 2000000,
+								    "alternativeAmount": 1000000
+								  }
+								}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("COMMON400"));
+	}
+
 	private void saveFinancialInfo() throws Exception {
 		mockMvc.perform(put("/api/v1/financial-info")
 						.header(HttpHeaders.AUTHORIZATION, authorization)
