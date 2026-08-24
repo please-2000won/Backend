@@ -21,7 +21,10 @@ public record FinancialProfileResponse(
 		Long totalAssetAmount,
 
 		@Schema(description = "총 부채", example = "3000000")
-		Long totalDebtAmount
+		Long totalDebtAmount,
+
+		@Schema(description = "순자산. 총 보유자산에서 총 부채를 뺀 계산값입니다.", example = "9000000")
+		Long netAssetAmount
 ) {
 
 	public static FinancialProfileResponse from(FinancialProfile financialProfile) {
@@ -31,7 +34,8 @@ public record FinancialProfileResponse(
 				financialProfile.getFixedExpense(),
 				financialProfile.getSavingsGoal(),
 				financialProfile.getTotalAssetAmount(),
-				financialProfile.getTotalDebtAmount()
+				financialProfile.getTotalDebtAmount(),
+				financialProfile.getTotalAssetAmount() - financialProfile.getTotalDebtAmount()
 		);
 	}
 }

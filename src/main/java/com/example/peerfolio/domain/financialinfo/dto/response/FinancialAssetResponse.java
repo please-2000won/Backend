@@ -15,15 +15,24 @@ public record FinancialAssetResponse(
 		Long foreignStockAmount,
 
 		@Schema(description = "대체/고위험자산 금액", example = "1000000")
-		Long alternativeAmount
+		Long alternativeAmount,
+
+		@Schema(description = "금융자산 합계. 예금/적금/채권, 국내주식, 해외주식, 대체/고위험자산의 합계입니다.", example = "12000000")
+		Long totalFinancialAssetAmount
 ) {
 
 	public static FinancialAssetResponse from(FinancialAsset financialAsset) {
+		Long totalFinancialAssetAmount = financialAsset.getDepositBondAmount()
+				+ financialAsset.getDomesticStockAmount()
+				+ financialAsset.getForeignStockAmount()
+				+ financialAsset.getAlternativeAmount();
+
 		return new FinancialAssetResponse(
 				financialAsset.getDepositBondAmount(),
 				financialAsset.getDomesticStockAmount(),
 				financialAsset.getForeignStockAmount(),
-				financialAsset.getAlternativeAmount()
+				financialAsset.getAlternativeAmount(),
+				totalFinancialAssetAmount
 		);
 	}
 }

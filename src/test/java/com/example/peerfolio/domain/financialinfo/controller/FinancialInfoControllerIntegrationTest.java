@@ -107,7 +107,9 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.isSuccess").value(true))
 				.andExpect(jsonPath("$.result.financialProfile.age").value(24))
 				.andExpect(jsonPath("$.result.financialProfile.monthlyIncome").value(2500000))
-				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(6000000));
+				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(9000000))
+				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(6000000))
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000));
 
 		// then: 저장된 금융 정보를 다시 조회할 수 있다.
 		mockMvc.perform(get("/api/v1/financial-info")
@@ -115,7 +117,9 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.isSuccess").value(true))
 				.andExpect(jsonPath("$.result.financialProfile.age").value(24))
-				.andExpect(jsonPath("$.result.financialAsset.foreignStockAmount").value(2000000));
+				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(9000000))
+				.andExpect(jsonPath("$.result.financialAsset.foreignStockAmount").value(2000000))
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000));
 	}
 
 	@Test
@@ -149,14 +153,18 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.isSuccess").value(true))
 				.andExpect(jsonPath("$.result.financialProfile.age").value(25))
 				.andExpect(jsonPath("$.result.financialProfile.monthlyIncome").value(3000000))
-				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(8000000));
+				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(13000000))
+				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(8000000))
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000));
 
 		// then: 기존 금융 정보가 새 값으로 수정된다.
 		mockMvc.perform(get("/api/v1/financial-info")
 						.header(HttpHeaders.AUTHORIZATION, authorization))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.result.financialProfile.age").value(25))
-				.andExpect(jsonPath("$.result.financialAsset.alternativeAmount").value(500000));
+				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(13000000))
+				.andExpect(jsonPath("$.result.financialAsset.alternativeAmount").value(500000))
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000));
 	}
 
 	@Test
