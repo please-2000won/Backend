@@ -42,6 +42,42 @@ public class FinancialProfile {
 	private Long totalDebtAmount;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
+	@JoinColumn(name = "user_id", nullable = false, unique = true)
 	private User user;
+
+	public static FinancialProfile create(
+			User user,
+			Integer age,
+			Long monthlyIncome,
+			Long fixedExpense,
+			Long savingsGoal,
+			Long totalAssetAmount,
+			Long totalDebtAmount
+	) {
+		FinancialProfile financialProfile = new FinancialProfile();
+		financialProfile.user = user;
+		financialProfile.age = age;
+		financialProfile.monthlyIncome = monthlyIncome;
+		financialProfile.fixedExpense = fixedExpense;
+		financialProfile.savingsGoal = savingsGoal;
+		financialProfile.totalAssetAmount = totalAssetAmount;
+		financialProfile.totalDebtAmount = totalDebtAmount;
+		return financialProfile;
+	}
+
+	public void update(
+			Integer age,
+			Long monthlyIncome,
+			Long fixedExpense,
+			Long savingsGoal,
+			Long totalAssetAmount,
+			Long totalDebtAmount
+	) {
+		this.age = age;
+		this.monthlyIncome = monthlyIncome;
+		this.fixedExpense = fixedExpense;
+		this.savingsGoal = savingsGoal;
+		this.totalAssetAmount = totalAssetAmount;
+		this.totalDebtAmount = totalDebtAmount;
+	}
 }
