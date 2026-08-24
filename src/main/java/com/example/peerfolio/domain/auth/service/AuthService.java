@@ -9,6 +9,7 @@ import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import com.example.peerfolio.global.security.JwtProvider;
+import com.example.peerfolio.global.util.NicknameGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtProvider jwtProvider;
+	private final NicknameGenerator nicknameGenerator;
 
 	@Transactional
 	public SignupResponse signup(SignupRequest request) {
@@ -30,11 +32,12 @@ public class AuthService {
 		}
 
 		String encodedPassword = passwordEncoder.encode(request.password());
+		String nickname = generateUniqueNickname();
 		User user = User.create(
 				request.name(),
 				request.email(),
 				encodedPassword,
-				request.nickname()
+				nickname
 		);
 
 		User savedUser = userRepository.save(user);
@@ -51,5 +54,17 @@ public class AuthService {
 
 		String accessToken = jwtProvider.createAccessToken(user.getId());
 		return LoginResponse.bearer(accessToken);
+	}
+
+	private String generateUniqueNickname() {
+		for (int i = 0; i < 20; i++) {
+			String nickname = nicknameGenerator.generate();
+
+			if (!userRepository.existsByNickname(nickname)) {
+				return nickname;
+			}
+		}
+
+		throw new ProjectException(GeneralErrorCode.INTERNAL_SERVER_ERROR);
 	}
 }

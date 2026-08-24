@@ -30,7 +30,7 @@ public class User {
 	@Column(nullable = false)
 	private String password;
 
-	@Column(nullable = false, length = 50)
+	@Column(nullable = false, unique = true, length = 50)
 	private String nickname;
 
 	public static User create(
