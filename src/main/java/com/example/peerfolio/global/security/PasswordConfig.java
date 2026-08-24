@@ -1,4 +1,4 @@
-package com.example.peerfolio.global.config;
+package com.example.peerfolio.global.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

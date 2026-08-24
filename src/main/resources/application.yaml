@@ -1,3 +1,7 @@
 spring:
   application:
     name: peerfolio
+
+jwt:
+  secret: ${JWT_SECRET:peerfolio-local-jwt-secret-key-for-development-only}
+  expiration: ${JWT_EXPIRATION:3600000}
