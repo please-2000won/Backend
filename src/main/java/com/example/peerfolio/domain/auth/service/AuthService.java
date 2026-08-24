@@ -13,6 +13,7 @@ import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import com.example.peerfolio.global.security.JwtProvider;
+import com.example.peerfolio.global.security.TokenBlacklistService;
 import com.example.peerfolio.global.util.NicknameGenerator;
 import com.example.peerfolio.global.util.VerificationCodeGenerator;
 import java.time.LocalDateTime;
@@ -32,6 +33,7 @@ public class AuthService {
 	private final EmailVerificationRepository emailVerificationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtProvider jwtProvider;
+	private final TokenBlacklistService tokenBlacklistService;
 	private final NicknameGenerator nicknameGenerator;
 	private final VerificationCodeGenerator verificationCodeGenerator;
 
@@ -71,7 +73,7 @@ public class AuthService {
 				.orElseGet(() -> EmailVerification.create(request.email(), code, expiresAt));
 
 		emailVerificationRepository.save(emailVerification);
-		return new EmailCodeResponse(request.email(), code, expiresAt);
+		return new EmailCodeResponse(request.email(), expiresAt);
 	}
 
 	public LoginResponse login(LoginRequest request) {
@@ -84,6 +86,16 @@ public class AuthService {
 
 		String accessToken = jwtProvider.createAccessToken(user.getId());
 		return LoginResponse.bearer(accessToken);
+	}
+
+	public void logout(String authorization) {
+		String accessToken = resolveBearerToken(authorization);
+
+		if (!jwtProvider.validateToken(accessToken)) {
+			throw new ProjectException(GeneralErrorCode.UNAUTHORIZED);
+		}
+
+		tokenBlacklistService.blacklist(accessToken, jwtProvider.getExpiration(accessToken));
 	}
 
 	private String generateUniqueNickname() {
@@ -112,5 +124,15 @@ public class AuthService {
 		}
 
 		emailVerification.verify();
+	}
+
+	private String resolveBearerToken(String authorization) {
+		String bearerPrefix = "Bearer ";
+
+		if (authorization == null || !authorization.startsWith(bearerPrefix)) {
+			throw new ProjectException(GeneralErrorCode.UNAUTHORIZED);
+		}
+
+		return authorization.substring(bearerPrefix.length());
 	}
 }

@@ -13,8 +13,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,7 +43,7 @@ public class AuthController {
 	@PostMapping("/email-code")
 	@Operation(
 			summary = "이메일 인증번호 발급",
-			description = "회원가입 전 이메일 인증번호를 발급합니다. 개발 단계에서는 인증번호를 응답으로 반환합니다."
+			description = "회원가입 전 이메일 인증번호를 발급하고 저장합니다. 실제 메일 발송 연동 전까지는 서버에 저장된 인증번호로 검증합니다."
 	)
 	public ApiResponse<EmailCodeResponse> sendEmailCode(
 			@Valid @RequestBody EmailCodeRequest request
@@ -65,9 +67,12 @@ public class AuthController {
 	@PostMapping("/logout")
 	@Operation(
 			summary = "로그아웃",
-			description = "Stateless JWT 구조이므로 서버 토큰 폐기 없이 성공 응답을 반환합니다. 클라이언트에서 access token을 삭제해야 합니다."
+			description = "Authorization 헤더의 access token을 만료 시각까지 무효화합니다. 클라이언트에서도 저장된 access token을 삭제해야 합니다."
 	)
-	public ApiResponse<Void> logout() {
+	public ApiResponse<Void> logout(
+			@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization
+	) {
+		authService.logout(authorization);
 		return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
 	}
 }

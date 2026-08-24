@@ -22,6 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private static final String BEARER_PREFIX = "Bearer ";
 
 	private final JwtProvider jwtProvider;
+	private final TokenBlacklistService tokenBlacklistService;
 	private final UserRepository userRepository;
 
 	@Override
@@ -32,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	) throws ServletException, IOException {
 		String token = resolveToken(request);
 
-		if (token != null && jwtProvider.validateToken(token)) {
+		if (token != null && jwtProvider.validateToken(token) && !tokenBlacklistService.isBlacklisted(token)) {
 			Long userId = jwtProvider.getUserId(token);
 			User user = userRepository.findById(userId).orElse(null);
 
