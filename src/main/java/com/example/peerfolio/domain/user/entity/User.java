@@ -32,4 +32,18 @@ public class User {
 
 	@Column(nullable = false, length = 50)
 	private String nickname;
+
+	public static User create(
+			String name,
+			String email,
+			String encodedPassword,
+			String nickname
+	) {
+		User user = new User();
+		user.name = name;
+		user.email = email;
+		user.password = encodedPassword;
+		user.nickname = nickname;
+		return user;
+	}
 }
