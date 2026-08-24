@@ -36,6 +36,34 @@ public class FinancialAsset {
 	private Long alternativeAmount;
 
 	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
+	@JoinColumn(name = "user_id", nullable = false, unique = true)
 	private User user;
+
+	public static FinancialAsset create(
+			User user,
+			Long depositBondAmount,
+			Long domesticStockAmount,
+			Long foreignStockAmount,
+			Long alternativeAmount
+	) {
+		FinancialAsset financialAsset = new FinancialAsset();
+		financialAsset.user = user;
+		financialAsset.depositBondAmount = depositBondAmount;
+		financialAsset.domesticStockAmount = domesticStockAmount;
+		financialAsset.foreignStockAmount = foreignStockAmount;
+		financialAsset.alternativeAmount = alternativeAmount;
+		return financialAsset;
+	}
+
+	public void update(
+			Long depositBondAmount,
+			Long domesticStockAmount,
+			Long foreignStockAmount,
+			Long alternativeAmount
+	) {
+		this.depositBondAmount = depositBondAmount;
+		this.domesticStockAmount = domesticStockAmount;
+		this.foreignStockAmount = foreignStockAmount;
+		this.alternativeAmount = alternativeAmount;
+	}
 }
