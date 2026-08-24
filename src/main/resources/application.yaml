@@ -1,3 +1,11 @@
 spring:
   application:
     name: peerfolio
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
+
+auth:
+  email-code:
+    expose-in-response: false
