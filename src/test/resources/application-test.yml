@@ -17,3 +17,7 @@ spring:
 jwt:
   secret: peerfolio-test-jwt-secret-key-for-test-environment-only
   expiration: 3600000
+
+auth:
+  email-code:
+    expose-in-response: false

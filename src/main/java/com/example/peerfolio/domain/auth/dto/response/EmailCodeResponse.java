@@ -8,7 +8,10 @@ public record EmailCodeResponse(
 		@Schema(description = "인증번호를 발급한 이메일", example = "user@example.com")
 		String email,
 
-		@Schema(description = "인증번호 만료 시각. 인증번호 원문은 응답에 포함하지 않습니다.")
+		@Schema(description = "로컬 개발 환경에서만 응답하는 인증번호", example = "123456", nullable = true)
+		String verificationCode,
+
+		@Schema(description = "인증번호 만료 시각")
 		LocalDateTime expiresAt
 ) {
 }

@@ -18,6 +18,7 @@ import com.example.peerfolio.global.util.NicknameGenerator;
 import com.example.peerfolio.global.util.VerificationCodeGenerator;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
 	private static final long EMAIL_CODE_EXPIRATION_MINUTES = 5;
+
+	@Value("${auth.email-code.expose-in-response:false}")
+	private boolean exposeEmailCodeInResponse;
 
 	private final UserRepository userRepository;
 	private final EmailVerificationRepository emailVerificationRepository;
@@ -73,7 +77,8 @@ public class AuthService {
 				.orElseGet(() -> EmailVerification.create(request.email(), code, expiresAt));
 
 		emailVerificationRepository.save(emailVerification);
-		return new EmailCodeResponse(request.email(), expiresAt);
+		String responseCode = exposeEmailCodeInResponse ? code : null;
+		return new EmailCodeResponse(request.email(), responseCode, expiresAt);
 	}
 
 	public LoginResponse login(LoginRequest request) {
