@@ -22,10 +22,16 @@ public record FinancialAssetResponse(
 ) {
 
 	public static FinancialAssetResponse from(FinancialAsset financialAsset) {
-		Long totalFinancialAssetAmount = financialAsset.getDepositBondAmount()
-				+ financialAsset.getDomesticStockAmount()
-				+ financialAsset.getForeignStockAmount()
-				+ financialAsset.getAlternativeAmount();
+		Long totalFinancialAssetAmount = Math.addExact(
+				Math.addExact(
+						financialAsset.getDepositBondAmount(),
+						financialAsset.getDomesticStockAmount()
+				),
+				Math.addExact(
+						financialAsset.getForeignStockAmount(),
+						financialAsset.getAlternativeAmount()
+				)
+		);
 
 		return new FinancialAssetResponse(
 				financialAsset.getDepositBondAmount(),

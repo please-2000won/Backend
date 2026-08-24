@@ -1,5 +1,6 @@
 package com.example.peerfolio.domain.financialinfo.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,6 +11,12 @@ import com.example.peerfolio.domain.financialprofile.repository.FinancialProfile
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.security.JwtProvider;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +26,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 @ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class FinancialInfoControllerIntegrationTest {
 
 	@Autowired
@@ -283,6 +288,66 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.code").value("COMMON400"));
 	}
 
+	@Test
+	void putFinancialInfoFailsWhenAmountExceedsLimit() throws Exception {
+		// when & then: 금액이 허용 범위를 초과하면 요청 검증에 실패한다.
+		mockMvc.perform(put("/api/v1/financial-info")
+						.header(HttpHeaders.AUTHORIZATION, authorization)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "financialProfile": {
+								    "age": 24,
+								    "monthlyIncome": 2500000,
+								    "fixedExpense": 900000,
+								    "savingsGoal": 700000,
+								    "totalAssetAmount": 12000000,
+								    "totalDebtAmount": 3000000
+								  },
+								  "financialAsset": {
+								    "depositBondAmount": 6000000,
+								    "domesticStockAmount": 3000000,
+								    "foreignStockAmount": 2000000,
+								    "alternativeAmount": 1000000000000000
+								  }
+								}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("COMMON400"));
+	}
+
+	@Test
+	void concurrentInitialPutCreatesSingleFinancialInfo() throws Exception {
+		// given: 금융 정보가 없는 같은 사용자의 최초 저장 요청 2개를 동시에 준비한다.
+		ExecutorService executorService = Executors.newFixedThreadPool(2);
+		CountDownLatch readyLatch = new CountDownLatch(2);
+		CountDownLatch startLatch = new CountDownLatch(1);
+		Callable<Integer> requestTask = () -> {
+			readyLatch.countDown();
+			startLatch.await(3, TimeUnit.SECONDS);
+			return requestSaveFinancialInfo();
+		};
+
+		try {
+			Future<Integer> firstRequest = executorService.submit(requestTask);
+			Future<Integer> secondRequest = executorService.submit(requestTask);
+
+			assertThat(readyLatch.await(3, TimeUnit.SECONDS)).isTrue();
+
+			// when: 두 요청을 동시에 시작한다.
+			startLatch.countDown();
+
+			// then: 두 요청이 모두 정상 처리되고 사용자당 금융 정보는 1세트만 생성된다.
+			assertThat(firstRequest.get(10, TimeUnit.SECONDS)).isEqualTo(200);
+			assertThat(secondRequest.get(10, TimeUnit.SECONDS)).isEqualTo(200);
+			assertThat(financialProfileRepository.findAll()).hasSize(1);
+			assertThat(financialAssetRepository.findAll()).hasSize(1);
+		} finally {
+			executorService.shutdownNow();
+		}
+	}
+
 	private void saveFinancialInfo() throws Exception {
 		mockMvc.perform(put("/api/v1/financial-info")
 						.header(HttpHeaders.AUTHORIZATION, authorization)
@@ -306,5 +371,32 @@ class FinancialInfoControllerIntegrationTest {
 								}
 								"""))
 				.andExpect(status().isOk());
+	}
+
+	private int requestSaveFinancialInfo() throws Exception {
+		return mockMvc.perform(put("/api/v1/financial-info")
+						.header(HttpHeaders.AUTHORIZATION, authorization)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "financialProfile": {
+								    "age": 24,
+								    "monthlyIncome": 2500000,
+								    "fixedExpense": 900000,
+								    "savingsGoal": 700000,
+								    "totalAssetAmount": 12000000,
+								    "totalDebtAmount": 3000000
+								  },
+								  "financialAsset": {
+								    "depositBondAmount": 6000000,
+								    "domesticStockAmount": 3000000,
+								    "foreignStockAmount": 2000000,
+								    "alternativeAmount": 1000000
+								  }
+								}
+								"""))
+				.andReturn()
+				.getResponse()
+				.getStatus();
 	}
 }

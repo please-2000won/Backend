@@ -9,6 +9,7 @@ import com.example.peerfolio.domain.financialinfo.dto.response.FinancialInfoResp
 import com.example.peerfolio.domain.financialprofile.entity.FinancialProfile;
 import com.example.peerfolio.domain.financialprofile.repository.FinancialProfileRepository;
 import com.example.peerfolio.domain.user.entity.User;
+import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class FinancialInfoService {
 
 	private final FinancialProfileRepository financialProfileRepository;
 	private final FinancialAssetRepository financialAssetRepository;
+	private final UserRepository userRepository;
 
 	public FinancialInfoResponse getMyFinancialInfo(User user) {
 		FinancialProfile financialProfile = financialProfileRepository.findByUserId(user.getId())
@@ -37,8 +39,10 @@ public class FinancialInfoService {
 			User user,
 			FinancialInfoRequest request
 	) {
-		FinancialProfile financialProfile = upsertFinancialProfile(user, request.financialProfile());
-		FinancialAsset financialAsset = upsertFinancialAsset(user, request.financialAsset());
+		User lockedUser = userRepository.findByIdForUpdate(user.getId())
+				.orElseThrow(() -> new ProjectException(GeneralErrorCode.NOT_FOUND));
+		FinancialProfile financialProfile = upsertFinancialProfile(lockedUser, request.financialProfile());
+		FinancialAsset financialAsset = upsertFinancialAsset(lockedUser, request.financialAsset());
 
 		return FinancialInfoResponse.of(financialProfile, financialAsset);
 	}
