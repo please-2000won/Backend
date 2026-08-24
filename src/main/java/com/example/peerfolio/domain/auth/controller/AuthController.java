@@ -9,6 +9,7 @@ import com.example.peerfolio.domain.auth.dto.response.SignupResponse;
 import com.example.peerfolio.domain.auth.service.AuthService;
 import com.example.peerfolio.global.apiPayload.ApiResponse;
 import com.example.peerfolio.global.apiPayload.code.GeneralSuccessCode;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,7 +25,7 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ApiResponse<SignupResponse> signup(
-			@RequestBody SignupRequest request
+			@Valid @RequestBody SignupRequest request
 	) {
 		SignupResponse response = authService.signup(request);
 		return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
@@ -32,7 +33,7 @@ public class AuthController {
 
 	@PostMapping("/email-code")
 	public ApiResponse<EmailCodeResponse> sendEmailCode(
-			@RequestBody EmailCodeRequest request
+			@Valid @RequestBody EmailCodeRequest request
 	) {
 		EmailCodeResponse response = authService.sendEmailCode(request);
 		return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);
@@ -40,7 +41,7 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public ApiResponse<LoginResponse> login(
-			@RequestBody LoginRequest request
+			@Valid @RequestBody LoginRequest request
 	) {
 		LoginResponse response = authService.login(request);
 		return ApiResponse.onSuccess(GeneralSuccessCode.OK, response);

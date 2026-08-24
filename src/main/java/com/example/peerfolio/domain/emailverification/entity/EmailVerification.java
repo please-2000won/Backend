@@ -53,4 +53,16 @@ public class EmailVerification {
 		this.expiresAt = expiresAt;
 		this.verified = false;
 	}
+
+	public boolean isExpired(LocalDateTime now) {
+		return expiresAt.isBefore(now);
+	}
+
+	public boolean matches(String code) {
+		return this.code.equals(code);
+	}
+
+	public void verify() {
+		this.verified = true;
+	}
 }

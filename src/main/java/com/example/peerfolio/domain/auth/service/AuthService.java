@@ -41,6 +41,7 @@ public class AuthService {
 			throw new ProjectException(GeneralErrorCode.CONFLICT);
 		}
 
+		verifyEmailCode(request.email(), request.verificationCode());
 		String encodedPassword = passwordEncoder.encode(request.password());
 		String nickname = generateUniqueNickname();
 		User user = User.create(
@@ -95,5 +96,21 @@ public class AuthService {
 		}
 
 		throw new ProjectException(GeneralErrorCode.INTERNAL_SERVER_ERROR);
+	}
+
+	private void verifyEmailCode(
+			String email,
+			String code
+	) {
+		EmailVerification emailVerification = emailVerificationRepository.findByEmail(email)
+				.orElseThrow(() -> new ProjectException(GeneralErrorCode.BAD_REQUEST));
+
+		if (emailVerification.getVerified()
+				|| emailVerification.isExpired(LocalDateTime.now())
+				|| !emailVerification.matches(code)) {
+			throw new ProjectException(GeneralErrorCode.BAD_REQUEST);
+		}
+
+		emailVerification.verify();
 	}
 }

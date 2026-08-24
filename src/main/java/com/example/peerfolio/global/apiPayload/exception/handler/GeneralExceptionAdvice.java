@@ -6,6 +6,7 @@ import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -21,6 +22,21 @@ public class GeneralExceptionAdvice {
         BaseErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.onFailure(errorCode, null));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<String>> handleValidationException(
+            MethodArgumentNotValidException e
+    ) {
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .orElse(GeneralErrorCode.BAD_REQUEST.getMessage());
+
+        return ResponseEntity.status(GeneralErrorCode.BAD_REQUEST.getStatus())
+                .body(ApiResponse.onFailure(GeneralErrorCode.BAD_REQUEST, message));
     }
 
     // 그 외의 정의되지 않은 모든 예외 처리
