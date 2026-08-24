@@ -42,4 +42,21 @@ public class AnalysisResult {
 
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
+
+	public static AnalysisResult create(
+			Integer peerCount,
+			User user,
+			String benchmarkResult,
+			String riskResult,
+			Integer totalRiskScore
+	) {
+		AnalysisResult analysisResult = new AnalysisResult();
+		analysisResult.peerCount = peerCount;
+		analysisResult.user = user;
+		analysisResult.benchmarkResult = benchmarkResult;
+		analysisResult.riskResult = riskResult;
+		analysisResult.totalRiskScore = totalRiskScore;
+		analysisResult.createdAt = LocalDateTime.now();
+		return analysisResult;
+	}
 }

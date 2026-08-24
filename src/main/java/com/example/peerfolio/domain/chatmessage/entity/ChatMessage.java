@@ -47,4 +47,19 @@ public class ChatMessage {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "analysis_result_id", nullable = false)
 	private AnalysisResult analysisResult;
+
+	public static ChatMessage create(
+			SenderType senderType,
+			String content,
+			User user,
+			AnalysisResult analysisResult
+	) {
+		ChatMessage chatMessage = new ChatMessage();
+		chatMessage.senderType = senderType;
+		chatMessage.content = content;
+		chatMessage.createdAt = LocalDateTime.now();
+		chatMessage.user = user;
+		chatMessage.analysisResult = analysisResult;
+		return chatMessage;
+	}
 }
