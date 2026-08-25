@@ -6,5 +6,5 @@ out
 .idea
 *.iml
 .env
-.env.*
+.env.*ㅊ
 README.md
