@@ -1,6 +1,10 @@
 spring:
   application:
     name: peerfolio
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
 jwt:
   secret: ${JWT_SECRET}
