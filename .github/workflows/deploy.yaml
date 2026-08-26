@@ -1,0 +1,70 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: peerfolio-develop
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Verify Docker build
+        run: docker build -t peerfolio-backend:ci .
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.EC2_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/ec2_key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/ec2_key"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          ssh \
+            -o BatchMode=yes \
+            -o ConnectTimeout=10 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -i "$HOME/.ssh/ec2_key" \
+            "$EC2_USER@$EC2_HOST" \
+            bash -s -- "$DEPLOY_SHA" << 'EOF'
+          set -e
+
+          DEPLOY_SHA="$1"
+
+          cd ~/Backend
+
+          git fetch origin develop
+          git checkout --detach "$DEPLOY_SHA"
+
+          CHECKED_OUT_SHA="$(git rev-parse HEAD)"
+
+          if [ "$CHECKED_OUT_SHA" != "$DEPLOY_SHA" ]; then
+            echo "SHA mismatch: expected=$DEPLOY_SHA actual=$CHECKED_OUT_SHA"
+            exit 1
+          fi
+
+          docker compose up -d --build
+          docker compose ps
+          EOF
