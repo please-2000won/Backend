@@ -25,5 +25,5 @@ public interface FinancialProfileRepository extends JpaRepository<FinancialProfi
 			)
 			from FinancialProfile fp
 			""")
-	List<PeerProfileData> findAllPeerFinancialData();
+	List<PeerProfileData> findAllPeerProfileData();
 }
