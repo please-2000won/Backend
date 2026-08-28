@@ -1,5 +1,6 @@
 package com.example.peerfolio.global.security;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,8 +26,8 @@ public class SecurityConfig {
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 	private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
-	@Value("${cors.allowed-origin}")
-	private String allowedOrigin;
+	@Value("${cors.allowed-origins}")
+	private String allowedOrigins;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -64,7 +65,12 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		configuration.setAllowedOrigins(List.of(allowedOrigin));
+		configuration.setAllowedOrigins(
+				Arrays.stream(allowedOrigins.split(","))
+						.map(String::trim)
+						.filter(origin -> !origin.isBlank())
+						.toList()
+		);
 		configuration.setAllowedMethods(
 				List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
 		);
