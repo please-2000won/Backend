@@ -13,3 +13,6 @@ jwt:
 auth:
   email-code:
     expose-in-response: false
+
+cors:
+  allowed-origin: ${CORS_ALLOWED_ORIGIN}
