@@ -18,10 +18,14 @@ import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ChatMessage {
 
 	@Id
@@ -54,12 +58,12 @@ public class ChatMessage {
 			User user,
 			AnalysisResult analysisResult
 	) {
-		ChatMessage chatMessage = new ChatMessage();
-		chatMessage.senderType = senderType;
-		chatMessage.content = content;
-		chatMessage.createdAt = LocalDateTime.now();
-		chatMessage.user = user;
-		chatMessage.analysisResult = analysisResult;
-		return chatMessage;
+		return ChatMessage.builder()
+				.senderType(senderType)
+				.content(content)
+				.createdAt(LocalDateTime.now())
+				.user(user)
+				.analysisResult(analysisResult)
+				.build();
 	}
 }
