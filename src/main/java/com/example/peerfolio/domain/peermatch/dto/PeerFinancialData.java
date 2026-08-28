@@ -5,7 +5,7 @@ public record PeerFinancialData (
     Integer age,
     Long monthlyIncome,
     Long fixedExpense,
-    Long savingGoal,
+    Long savingsGoal,
     Long totalAssetAmount,
     Long totalDebtAmount,
     Long depositBondAmount,
