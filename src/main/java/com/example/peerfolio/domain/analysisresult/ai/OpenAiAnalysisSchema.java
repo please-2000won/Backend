@@ -1,4 +1,4 @@
-package com.example.peerfolio.domain.analysisresult.service;
+package com.example.peerfolio.domain.analysisresult.ai;
 
 import java.util.List;
 import java.util.Map;

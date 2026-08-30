@@ -94,12 +94,14 @@ public class PeerMatchingService {
 
     // 매칭 교체
     @Transactional
-    public List<PeerMatch> replaceMatchingPeers(User targetUser) {
-        // 현재 금융 프로필을 기준으로 새로운 피어 후보 선정
-        List<PeerMatchCandidate> candidates = findMatchingPeers(targetUser.getId());
-
-        // 재분석 시 이전 피어 매칭 결과 삭제
-        peerMatchRepository.deleteAllByTargetUserId(targetUser.getId());
+    public List<PeerMatch> replaceMatchingPeers(
+            User targetUser,
+            List<PeerMatchCandidate> candidates
+    ) {
+        // 새 분석이 성공한 후 기존 피어 매칭을 삭제
+        peerMatchRepository.deleteAllByTargetUserId(
+                targetUser.getId()
+        );
 
         List<PeerMatch> peerMatches = candidates.stream()
                 .map(candidate -> {

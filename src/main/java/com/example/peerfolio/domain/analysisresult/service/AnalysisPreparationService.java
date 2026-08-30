@@ -1,5 +1,7 @@
 package com.example.peerfolio.domain.analysisresult.service;
 
+import com.example.peerfolio.domain.analysisresult.calculator.InvestmentBenchmarkCalculator;
+import com.example.peerfolio.domain.analysisresult.calculator.PeerProfileBenchmarkCalculator;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
@@ -19,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class PeerBenchmarkService {
+public class AnalysisPreparationService {
 
     private final PeerMatchingService peerMatchingService;
     private final FinancialProfileRepository financialProfileRepository;

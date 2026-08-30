@@ -1,9 +1,10 @@
-package com.example.peerfolio.domain.analysisresult.service;
+package com.example.peerfolio.domain.analysisresult.ai;
 
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentAllocation;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
+import com.example.peerfolio.domain.analysisresult.calculator.InvestmentBenchmarkCalculator;
 import com.example.peerfolio.domain.peermatch.dto.PeerAssetData;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
