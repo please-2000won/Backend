@@ -8,6 +8,7 @@ import java.util.Optional;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface FinancialProfileRepository extends JpaRepository<FinancialProfile, Long> {
 
@@ -26,4 +27,21 @@ public interface FinancialProfileRepository extends JpaRepository<FinancialProfi
 			from FinancialProfile fp
 			""")
 	List<PeerProfileData> findAllPeerProfileData();
+
+	@Query("""
+			select new com.example.peerfolio.domain.peermatch.dto.PeerProfileData(
+				fp.user.id,
+				fp.age,
+				fp.monthlyIncome,
+				fp.fixedExpense,
+				fp.savingsGoal,
+				fp.totalAssetAmount,
+				fp.totalDebtAmount
+			)
+			from FinancialProfile fp 
+			where fp.user.id in :userIds
+			""")
+	List<PeerProfileData> findAllPeerProfileDataByUserIds(
+			@Param("userIds") List<Long> userIds
+	);
 }
