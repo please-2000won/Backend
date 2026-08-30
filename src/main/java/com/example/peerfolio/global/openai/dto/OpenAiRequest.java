@@ -6,6 +6,7 @@ public record OpenAiRequest(
         String model,
         String instructions,
         String input,
+        boolean store,
         TextConfig text
 ) {
 
@@ -44,6 +45,7 @@ public record OpenAiRequest(
                 model,
                 instructions,
                 input,
+                false,
                 new TextConfig(
                         Format.jsonSchema(
                                 "peer_financial_analysis",
