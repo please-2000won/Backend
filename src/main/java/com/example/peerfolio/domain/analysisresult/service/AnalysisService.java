@@ -3,13 +3,16 @@ package com.example.peerfolio.domain.analysisresult.service;
 import com.example.peerfolio.domain.analysisresult.ai.AiAnalysisClient;
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
+import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
+import com.example.peerfolio.domain.analysisresult.repository.AnalysisResultRepository;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,23 +23,21 @@ public class AnalysisService {
     private final AnalysisPreparationService analysisPreparationService;
     private final AiAnalysisClient aiAnalysisClient;
     private final AnalysisResultWriter analysisResultWriter;
+    private final AnalysisResultRepository analysisResultRepository;
     private final ObjectMapper objectMapper;
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
-    public AnalysisResult createAnalysis(User user) {
-        // DB 변경하지 않고 피어 후보와 평균 준비
+    public AnalysisResponse createAnalysis(User user) {
         AnalysisPreparation preparation =
                 analysisPreparationService.prepareAnalysis(
                         user.getId()
                 );
 
-        // 직렬화 실패 시 요청 호출 전 분석 중단
         String benchmarkResultJson =
                 serializeBenchmarkResult(
                         preparation.benchmarkResult()
                 );
 
-        // 외부 OpenAI API 호출
         AiAnalysisResult aiAnalysisResult =
                 aiAnalysisClient.analyzePeerBenchmark(
                         preparation.targetProfile(),
@@ -44,19 +45,68 @@ public class AnalysisService {
                         preparation.benchmarkResult()
                 );
 
-        // 준비와 AI 분석 모두 성공한 경우에만 기존 피어 매칭과 분석 결과 교체
-        return analysisResultWriter.replaceAnalysisResult(
-                user.getId(),
-                preparation,
-                aiAnalysisResult,
-                benchmarkResultJson
-        );
+        AnalysisResult analysisResult =
+                analysisResultWriter.replaceAnalysisResult(
+                        user.getId(),
+                        preparation,
+                        aiAnalysisResult,
+                        benchmarkResultJson
+                );
+
+        return toResponse(analysisResult);
     }
 
     private String serializeBenchmarkResult(BenchmarkResult benchmarkResult) {
         try {
             return objectMapper.writeValueAsString(benchmarkResult);
         } catch (JacksonException e) {
+            throw new ProjectException(
+                    GeneralErrorCode.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public AnalysisResponse getLatestAnalysis(User user) {
+        AnalysisResult analysisResult =
+                analysisResultRepository.findByUserId(
+                        user.getId()
+                ).orElseThrow(() ->
+                        new ProjectException(
+                                GeneralErrorCode.NOT_FOUND
+                        )
+                );
+
+        return toResponse(analysisResult);
+    }
+
+    private AnalysisResponse toResponse(
+            AnalysisResult analysisResult
+    ) {
+        try {
+            BenchmarkResult benchmarkResult =
+                    objectMapper.readValue(
+                            analysisResult.getBenchmarkResult(),
+                            BenchmarkResult.class
+                    );
+
+            AnalysisResponse.RiskResult riskResult =
+                    objectMapper.readValue(
+                            analysisResult.getRiskResult(),
+                            AnalysisResponse.RiskResult.class
+                    );
+
+            return new AnalysisResponse(
+                    analysisResult.getId(),
+                    analysisResult.getPeerCount(),
+                    benchmarkResult,
+                    riskResult,
+                    analysisResult.getTotalRiskScore(),
+                    analysisResult.getAnalysisComment(),
+                    analysisResult.getCreatedAt()
+            );
+
+        } catch (JacksonException exception) {
             throw new ProjectException(
                     GeneralErrorCode.INTERNAL_SERVER_ERROR
             );
