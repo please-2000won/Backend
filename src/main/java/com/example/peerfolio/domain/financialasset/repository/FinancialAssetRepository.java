@@ -17,12 +17,12 @@ public interface FinancialAssetRepository extends JpaRepository<FinancialAsset, 
 	@Query("""
 			select new com.example.peerfolio.domain.peermatch.dto.PeerAssetData(
 			fa.user.id,
-			fa.depositBoindAmount,
+			fa.depositBondAmount,
 			fa.domesticStockAmount,
 			fa.foreignStockAmount,
 			fa.alternativeAmount)
 			from FinancialAsset fa 
 			where fa.user.id in :userIds
 			""")
-	List<PeerAssetData> findAllPeerAssetDateByUserIds(@Param("userIds") List<Long> userIds);
+	List<PeerAssetData> findAllPeerAssetDataByUserIds(@Param("userIds") List<Long> userIds);
 }
