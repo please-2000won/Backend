@@ -15,17 +15,22 @@ public interface FinancialProfileRepository extends JpaRepository<FinancialProfi
 	Optional<FinancialProfile> findByUserId(Long userId);
 
 	@Query("""
-			select new com.example.peerfolio.domain.peermatch.dto.PeerProfileData(
-				fp.user.id,
-				fp.age,
-				fp.monthlyIncome,
-				fp.fixedExpense,
-				fp.savingsGoal,
-				fp.totalAssetAmount,
-				fp.totalDebtAmount
-			)
-			from FinancialProfile fp
-			""")
+      		select new com.example.peerfolio.domain.peermatch.dto.PeerProfileData(
+         		fp.user.id,
+         		fp.age,
+         		fp.monthlyIncome,
+         		fp.fixedExpense,
+         		fp.savingsGoal,
+         		fp.totalAssetAmount,
+         		fp.totalDebtAmount
+      		)
+      		from FinancialProfile fp
+      		where exists (
+         		select 1
+         		from FinancialAsset fa
+         		where fa.user.id = fp.user.id
+      		)
+      		""")
 	List<PeerProfileData> findAllPeerProfileData();
 
 	@Query("""
