@@ -8,9 +8,6 @@ public record OpenAiAnalysisPayload(
 
     public record RiskResult(
             String riskLevel,
-            Integer incomeBalanceRiskScore,
-            Integer debtRiskScore,
-            Integer investmentConcentrationRiskScore,
             String summary
     ) {
 
