@@ -3,10 +3,6 @@ package com.example.peerfolio.domain.peermatch.service;
 import com.example.peerfolio.domain.financialprofile.repository.FinancialProfileRepository;
 import com.example.peerfolio.domain.peermatch.dto.PeerMatchCandidate;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
-import com.example.peerfolio.domain.peermatch.entity.PeerMatch;
-import com.example.peerfolio.domain.peermatch.repository.PeerMatchRepository;
-import com.example.peerfolio.domain.user.entity.User;
-import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +25,6 @@ public class PeerMatchingService {
 
     private final FinancialProfileRepository financialProfileRepository;
     private final PeerSimilarityCalculator peerSimilarityCalculator;
-
-    private final PeerMatchRepository peerMatchRepository;
-    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<PeerMatchCandidate> findMatchingPeers(Long targetUserId) {
@@ -92,31 +85,4 @@ public class PeerMatchingService {
                 .toList();
     }
 
-    // 매칭 교체
-    @Transactional
-    public List<PeerMatch> replaceMatchingPeers(
-            User targetUser,
-            List<PeerMatchCandidate> candidates
-    ) {
-        // 새 분석이 성공한 후 기존 피어 매칭을 삭제
-        peerMatchRepository.deleteAllByTargetUserId(
-                targetUser.getId()
-        );
-
-        List<PeerMatch> peerMatches = candidates.stream()
-                .map(candidate -> {
-                    User peerUser = userRepository.getReferenceById(
-                            candidate.peerUserId()
-                    );
-
-                    return PeerMatch.create(
-                            candidate.similarityScore(),
-                            targetUser,
-                            peerUser
-                    );
-                })
-                .toList();
-
-        return peerMatchRepository.saveAll(peerMatches);
-    }
 }

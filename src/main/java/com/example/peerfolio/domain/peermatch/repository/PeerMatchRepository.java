@@ -12,7 +12,7 @@ public interface PeerMatchRepository extends JpaRepository<PeerMatch, Long> {
 
     List<PeerMatch> findAllByTargetUserId(Long targetUserId);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("""
             delete from PeerMatch pm
             where pm.targetUser.id = :targetUserId
