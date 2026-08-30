@@ -1,6 +1,5 @@
 package com.example.peerfolio.global.openai.dto;
 
-
 import java.util.Map;
 
 public record OpenAiRequest(

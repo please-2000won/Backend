@@ -1,7 +1,6 @@
 package com.example.peerfolio.global.openai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.hibernate.result.Output;
 
 import java.util.List;
 
