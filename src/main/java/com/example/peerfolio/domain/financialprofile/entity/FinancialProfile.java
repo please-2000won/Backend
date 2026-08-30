@@ -12,10 +12,14 @@ import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class FinancialProfile {
 
 	@Id
@@ -54,15 +58,15 @@ public class FinancialProfile {
 			Long totalAssetAmount,
 			Long totalDebtAmount
 	) {
-		FinancialProfile financialProfile = new FinancialProfile();
-		financialProfile.user = user;
-		financialProfile.age = age;
-		financialProfile.monthlyIncome = monthlyIncome;
-		financialProfile.fixedExpense = fixedExpense;
-		financialProfile.savingsGoal = savingsGoal;
-		financialProfile.totalAssetAmount = totalAssetAmount;
-		financialProfile.totalDebtAmount = totalDebtAmount;
-		return financialProfile;
+		return FinancialProfile.builder()
+				.user(user)
+				.age(age)
+				.monthlyIncome(monthlyIncome)
+				.fixedExpense(fixedExpense)
+				.savingsGoal(savingsGoal)
+				.totalAssetAmount(totalAssetAmount)
+				.totalDebtAmount(totalDebtAmount)
+				.build();
 	}
 
 	public void update(

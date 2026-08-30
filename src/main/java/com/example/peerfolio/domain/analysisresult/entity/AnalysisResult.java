@@ -1,22 +1,16 @@
 package com.example.peerfolio.domain.analysisresult.entity;
 
 import com.example.peerfolio.domain.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Getter
 @Entity
+@Getter
+@Table(name = "analysis_result")
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AnalysisResult {
 
 	@Id
@@ -24,39 +18,44 @@ public class AnalysisResult {
 	@Column(name = "analysis_result_id")
 	private Long id;
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false, unique = true)
+	private User user;
+
 	@Column(nullable = false)
 	private Integer peerCount;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
-
-	@Column(columnDefinition = "json")
+	@Column(nullable = false, columnDefinition = "json")
 	private String benchmarkResult;
 
-	@Column(columnDefinition = "json")
+	@Column(nullable = false, columnDefinition = "json")
 	private String riskResult;
 
 	@Column(nullable = false)
 	private Integer totalRiskScore;
 
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "text")
+	private String analysisComment;
+
+	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
 	public static AnalysisResult create(
-			Integer peerCount,
 			User user,
+			Integer peerCount,
 			String benchmarkResult,
 			String riskResult,
-			Integer totalRiskScore
+			Integer totalRiskScore,
+			String analysisComment
 	) {
-		AnalysisResult analysisResult = new AnalysisResult();
-		analysisResult.peerCount = peerCount;
-		analysisResult.user = user;
-		analysisResult.benchmarkResult = benchmarkResult;
-		analysisResult.riskResult = riskResult;
-		analysisResult.totalRiskScore = totalRiskScore;
-		analysisResult.createdAt = LocalDateTime.now();
-		return analysisResult;
+		return AnalysisResult.builder()
+				.user(user)
+				.peerCount(peerCount)
+				.benchmarkResult(benchmarkResult)
+				.riskResult(riskResult)
+				.totalRiskScore(totalRiskScore)
+				.analysisComment(analysisComment)
+				.createdAt(LocalDateTime.now())
+				.build();
 	}
 }

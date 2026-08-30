@@ -12,10 +12,14 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PeerMatch {
 
 	@Id
@@ -33,4 +37,16 @@ public class PeerMatch {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "peer_user_id", nullable = false)
 	private User peerUser;
+
+	public static PeerMatch create(
+			Double similarityScore,
+			User targetUser,
+			User peerUser
+	) {
+		return PeerMatch.builder()
+				.similarityScore(similarityScore)
+				.targetUser(targetUser)
+				.peerUser(peerUser)
+				.build();
+	}
 }

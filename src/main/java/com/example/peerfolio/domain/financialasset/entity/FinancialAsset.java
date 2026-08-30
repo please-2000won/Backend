@@ -12,10 +12,14 @@ import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class FinancialAsset {
 
 	@Id
@@ -46,13 +50,13 @@ public class FinancialAsset {
 			Long foreignStockAmount,
 			Long alternativeAmount
 	) {
-		FinancialAsset financialAsset = new FinancialAsset();
-		financialAsset.user = user;
-		financialAsset.depositBondAmount = depositBondAmount;
-		financialAsset.domesticStockAmount = domesticStockAmount;
-		financialAsset.foreignStockAmount = foreignStockAmount;
-		financialAsset.alternativeAmount = alternativeAmount;
-		return financialAsset;
+		return FinancialAsset.builder()
+				.user(user)
+				.depositBondAmount(depositBondAmount)
+				.domesticStockAmount(domesticStockAmount)
+				.foreignStockAmount(foreignStockAmount)
+				.alternativeAmount(alternativeAmount)
+				.build();
 	}
 
 	public void update(

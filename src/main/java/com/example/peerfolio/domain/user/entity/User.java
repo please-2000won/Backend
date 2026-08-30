@@ -9,11 +9,15 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
 @Table(name = "users")
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
 	@Id
@@ -39,11 +43,11 @@ public class User {
 			String encodedPassword,
 			String nickname
 	) {
-		User user = new User();
-		user.name = name;
-		user.email = email;
-		user.password = encodedPassword;
-		user.nickname = nickname;
-		return user;
+		return User.builder()
+				.name(name)
+				.email(email)
+				.password(encodedPassword)
+				.nickname(nickname)
+				.build();
 	}
 }

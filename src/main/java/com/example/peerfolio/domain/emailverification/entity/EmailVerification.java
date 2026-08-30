@@ -9,10 +9,14 @@ import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
 @Entity
+@Builder(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class EmailVerification {
 
 	@Id
@@ -37,12 +41,12 @@ public class EmailVerification {
 			String code,
 			LocalDateTime expiresAt
 	) {
-		EmailVerification emailVerification = new EmailVerification();
-		emailVerification.email = email;
-		emailVerification.code = code;
-		emailVerification.expiresAt = expiresAt;
-		emailVerification.verified = false;
-		return emailVerification;
+		return EmailVerification.builder()
+				.email(email)
+				.code(code)
+				.expiresAt(expiresAt)
+				.verified(false)
+				.build();
 	}
 
 	public void updateCode(
