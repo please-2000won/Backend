@@ -2,6 +2,8 @@ package com.example.peerfolio.domain.analysisresult.service;
 
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
+import com.example.peerfolio.domain.analysisresult.dto.InvestmentAllocation;
+import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
 import com.example.peerfolio.domain.peermatch.dto.PeerAssetData;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
@@ -158,6 +160,7 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
     private final OpenAiClient openAiClient;
     private final OpenAiProperties properties;
     private final ObjectMapper objectMapper;
+    private final InvestmentBenchmarkCalculator investmentBenchmarkCalculator;
 
     @Override
     public AiAnalysisResult analyzePeerBenchmark(
@@ -189,7 +192,16 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
             PeerAssetData targetAsset,
             BenchmarkResult benchmarkResult
     ) {
-        // userId는 OpenAI에 전달하지 않음
+        // 분석 대상 사용자의 투자자산 구성 비율
+        InvestmentAllocation userAllocation =
+                investmentBenchmarkCalculator.calculateAllocation(
+                        targetAsset
+                );
+
+        InvestmentBenchmark peerInvestment =
+                benchmarkResult.investment();
+
+        // userId 등 식별정보는 OpenAI에 전달하지 않는다.
         Map<String, Object> userProfile = Map.of(
                 "age", targetProfile.age(),
                 "monthlyIncome", targetProfile.monthlyIncome(),
@@ -199,11 +211,31 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
                 "totalDebtAmount", targetProfile.totalDebtAmount()
         );
 
+        Map<String, Object> userAssetAmounts = Map.of(
+                "depositBondAmount",
+                targetAsset.depositBondAmount(),
+                "domesticStockAmount",
+                targetAsset.domesticStockAmount(),
+                "foreignStockAmount",
+                targetAsset.foreignStockAmount(),
+                "alternativeAmount",
+                targetAsset.alternativeAmount()
+        );
+
+        Map<String, Object> userAssetRatios = Map.of(
+                "depositBondRatio",
+                userAllocation.depositBondRatio(),
+                "domesticStockRatio",
+                userAllocation.domesticStockRatio(),
+                "foreignStockRatio",
+                userAllocation.foreignStockRatio(),
+                "alternativeRatio",
+                userAllocation.alternativeRatio()
+        );
+
         Map<String, Object> userAsset = Map.of(
-                "depositBondAmount", targetAsset.depositBondAmount(),
-                "domesticStockAmount", targetAsset.domesticStockAmount(),
-                "foreignStockAmount", targetAsset.foreignStockAmount(),
-                "alternativeAmount", targetAsset.alternativeAmount()
+                "amounts", userAssetAmounts,
+                "allocationRatios", userAssetRatios
         );
 
         Map<String, Object> peerProfile = Map.of(
@@ -213,41 +245,79 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
                 benchmarkResult.profile().averageTotalAssetAmount()
         );
 
-        Map<String, Object> peerInvestment = Map.of(
-                "peerCount",
-                benchmarkResult.investment().peerCount(),
+        Map<String, Object> peerAssetAmounts = Map.of(
                 "averageDepositBondAmount",
-                benchmarkResult.investment().averageDepositBondAmount(),
+                peerInvestment.averageDepositBondAmount(),
                 "averageDomesticStockAmount",
-                benchmarkResult.investment().averageDomesticStockAmount(),
+                peerInvestment.averageDomesticStockAmount(),
                 "averageForeignStockAmount",
-                benchmarkResult.investment().averageForeignStockAmount(),
+                peerInvestment.averageForeignStockAmount(),
                 "averageAlternativeAmount",
-                benchmarkResult.investment().averageAlternativeAmount(),
+                peerInvestment.averageAlternativeAmount()
+        );
+
+        Map<String, Object> peerAssetRatios = Map.of(
                 "averageDepositBondRatio",
-                benchmarkResult.investment().averageDepositBondRatio(),
+                peerInvestment.averageDepositBondRatio(),
                 "averageDomesticStockRatio",
-                benchmarkResult.investment().averageDomesticStockRatio(),
+                peerInvestment.averageDomesticStockRatio(),
                 "averageForeignStockRatio",
-                benchmarkResult.investment().averageForeignStockRatio(),
+                peerInvestment.averageForeignStockRatio(),
                 "averageAlternativeRatio",
-                benchmarkResult.investment().averageAlternativeRatio()
+                peerInvestment.averageAlternativeRatio()
+        );
+
+        Map<String, Object> peerInvestmentData = Map.of(
+                "peerCount", peerInvestment.peerCount(),
+                "averageAmounts", peerAssetAmounts,
+                "averageAllocationRatios", peerAssetRatios
+        );
+
+        /*
+         * 양수: 사용자가 피어 그룹보다 비중이 높음
+         * 음수: 사용자가 피어 그룹보다 비중이 낮음
+         */
+        Map<String, Object> allocationDifferences = Map.of(
+                "depositBondPercentagePoints",
+                calculateRatioDifference(
+                        userAllocation.depositBondRatio(),
+                        peerInvestment.averageDepositBondRatio()
+                ),
+                "domesticStockPercentagePoints",
+                calculateRatioDifference(
+                        userAllocation.domesticStockRatio(),
+                        peerInvestment.averageDomesticStockRatio()
+                ),
+                "foreignStockPercentagePoints",
+                calculateRatioDifference(
+                        userAllocation.foreignStockRatio(),
+                        peerInvestment.averageForeignStockRatio()
+                ),
+                "alternativePercentagePoints",
+                calculateRatioDifference(
+                        userAllocation.alternativeRatio(),
+                        peerInvestment.averageAlternativeRatio()
+                )
         );
 
         Map<String, Object> input = Map.of(
                 "user", Map.of(
                         "financialProfile", userProfile,
-                        "investmentProfile", userAsset
+                        "financialAsset", userAsset
                 ),
                 "peerGroup", Map.of(
                         "profileBenchmark", peerProfile,
-                        "investmentBenchmark", peerInvestment
+                        "investmentBenchmark", peerInvestmentData
+                ),
+                "comparison", Map.of(
+                        "allocationDifferencePercentagePoints",
+                        allocationDifferences
                 )
         );
 
         try {
             return objectMapper.writeValueAsString(input);
-        } catch (JacksonException e) {
+        } catch (JacksonException exception) {
             throw new ProjectException(
                     OpenAiErrorCode.REQUEST_FAILED
             );
@@ -318,5 +388,14 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
             case "HIGH" -> score >= 67;
             default -> false;
         };
+    }
+
+    private double calculateRatioDifference(
+            double userRatio,
+            double peerAverageRatio
+    ) {
+        double difference = userRatio - peerAverageRatio;
+
+        return Math.round(difference * 100.0) / 100.0;
     }
 }
