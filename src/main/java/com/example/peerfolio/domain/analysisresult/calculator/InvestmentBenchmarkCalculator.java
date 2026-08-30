@@ -1,5 +1,6 @@
-package com.example.peerfolio.domain.analysisresult.service;
+package com.example.peerfolio.domain.analysisresult.calculator;
 
+import com.example.peerfolio.domain.analysisresult.dto.InvestmentAllocation;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
 import com.example.peerfolio.domain.peermatch.dto.PeerAssetData;
 import org.springframework.stereotype.Component;
@@ -49,37 +50,30 @@ public class InvestmentBenchmarkCalculator {
                 peerCount
         );
 
-        // 사용자별 투자 비율 계산 후 그 비율의 평균 냄
-        // 단순히 피어 전체 금액 합산해서 비율 구할 시 자산 많은 사용자가 평균 크게 좌우 가능
-        double averageDepositBondRatio = peerAssetDataList.stream()
-                .mapToDouble(data -> calculateRatio(
-                        data.depositBondAmount(),
-                        calculateTotalInvestment(data)
-                ))
+        // 각 피어의 자산 구성 비율을 먼저 계산
+        List<InvestmentAllocation> allocations =
+                peerAssetDataList.stream()
+                        .map(this::calculateAllocation)
+                        .toList();
+
+        // 각 사용자 비율의 평균을 피어 그룹 평균 비율로 사용
+        double averageDepositBondRatio = allocations.stream()
+                .mapToDouble(InvestmentAllocation::depositBondRatio)
                 .average()
                 .orElse(0.0);
 
-        double averageDomesticStockRatio = peerAssetDataList.stream()
-                .mapToDouble(data -> calculateRatio(
-                        data.domesticStockAmount(),
-                        calculateTotalInvestment(data)
-                ))
+        double averageDomesticStockRatio = allocations.stream()
+                .mapToDouble(InvestmentAllocation::domesticStockRatio)
                 .average()
                 .orElse(0.0);
 
-        double averageForeignStockRatio = peerAssetDataList.stream()
-                .mapToDouble(data -> calculateRatio(
-                        data.foreignStockAmount(),
-                        calculateTotalInvestment(data)
-                ))
+        double averageForeignStockRatio = allocations.stream()
+                .mapToDouble(InvestmentAllocation::foreignStockRatio)
                 .average()
                 .orElse(0.0);
 
-        double averageAlternativeRatio = peerAssetDataList.stream()
-                .mapToDouble(data -> calculateRatio(
-                        data.alternativeAmount(),
-                        calculateTotalInvestment(data)
-                ))
+        double averageAlternativeRatio = allocations.stream()
+                .mapToDouble(InvestmentAllocation::alternativeRatio)
                 .average()
                 .orElse(0.0);
 
@@ -93,6 +87,32 @@ public class InvestmentBenchmarkCalculator {
                 roundRatio(averageDomesticStockRatio),
                 roundRatio(averageForeignStockRatio),
                 roundRatio(averageAlternativeRatio)
+        );
+    }
+
+    // 사용자 한명의 전체 투자자산에서 각 자산 유형이 차지하는 비율 계산
+    public InvestmentAllocation calculateAllocation(
+            PeerAssetData assetData
+    ) {
+        long totalInvestment = calculateTotalInvestment(assetData);
+
+        return new InvestmentAllocation(
+                calculateRatio(
+                        assetData.depositBondAmount(),
+                        totalInvestment
+                ),
+                calculateRatio(
+                        assetData.domesticStockAmount(),
+                        totalInvestment
+                ),
+                calculateRatio(
+                        assetData.foreignStockAmount(),
+                        totalInvestment
+                ),
+                calculateRatio(
+                        assetData.alternativeAmount(),
+                        totalInvestment
+                )
         );
     }
 

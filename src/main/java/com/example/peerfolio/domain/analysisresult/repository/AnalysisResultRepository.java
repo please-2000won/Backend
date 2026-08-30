@@ -12,7 +12,7 @@ public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, 
 
     Optional<AnalysisResult> findByUserId(Long userId);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("""
             delete from AnalysisResult ar
             where ar.user.id = :userId

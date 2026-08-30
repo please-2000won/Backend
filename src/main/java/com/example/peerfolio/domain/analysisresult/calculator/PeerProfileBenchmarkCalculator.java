@@ -1,4 +1,4 @@
-package com.example.peerfolio.domain.analysisresult.service;
+package com.example.peerfolio.domain.analysisresult.calculator;
 
 import com.example.peerfolio.domain.analysisresult.dto.PeerProfileBenchmark;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;

@@ -1,4 +1,4 @@
-package com.example.peerfolio.domain.analysisresult.service;
+package com.example.peerfolio.domain.analysisresult.ai;
 
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
