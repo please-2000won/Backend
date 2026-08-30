@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/anlaysis")
+@RequestMapping("/api/v1/analysis")
 @Tag(
         name = "Analysis",
         description = "피어 그룹 생성 및 금융 AI 분석 API"
