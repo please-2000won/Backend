@@ -1,5 +1,6 @@
 package com.example.peerfolio.domain.auth.service;
 
+import com.example.peerfolio.domain.auth.code.AuthErrorCode;
 import com.example.peerfolio.domain.auth.dto.request.EmailCodeRequest;
 import com.example.peerfolio.domain.auth.dto.request.LoginRequest;
 import com.example.peerfolio.domain.auth.dto.request.SignupRequest;
@@ -83,10 +84,10 @@ public class AuthService {
 
 	public LoginResponse login(LoginRequest request) {
 		User user = userRepository.findByEmail(request.email())
-				.orElseThrow(() -> new ProjectException(GeneralErrorCode.UNAUTHORIZED));
+				.orElseThrow(() -> new ProjectException(AuthErrorCode.INVALID_CREDENTIALS));
 
 		if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-			throw new ProjectException(GeneralErrorCode.UNAUTHORIZED);
+			throw new ProjectException(AuthErrorCode.INVALID_CREDENTIALS);
 		}
 
 		String accessToken = jwtProvider.createAccessToken(user.getId());
