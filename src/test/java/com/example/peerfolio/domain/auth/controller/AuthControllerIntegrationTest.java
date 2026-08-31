@@ -161,7 +161,25 @@ class AuthControllerIntegrationTest {
 								""".formatted(EMAIL)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.isSuccess").value(false))
-				.andExpect(jsonPath("$.code").value("COMMON401"));
+				.andExpect(jsonPath("$.code").value("AUTH_401_1"))
+				.andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다."));
+	}
+
+	@Test
+	void loginFailsWithInvalidCredentialsEvenWhenPasswordFormatIsInvalid() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/login")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "email": "1",
+								  "password": "2"
+								}
+								"""))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("AUTH_401_1"))
+				.andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다."))
+				.andExpect(jsonPath("$.result").doesNotExist());
 	}
 
 	@Test
