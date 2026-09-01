@@ -23,14 +23,20 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PeerQueryService {
 
-    private static final int PEER_CARD_COUNT = 3;
+    private static final int MIN_PEER_CARD_COUNT = 1;
+    private static final int MAX_PEER_CARD_COUNT = 3;
 
     private final PeerMatchRepository peerMatchRepository;
     private final FinancialProfileRepository financialProfileRepository;
     private final FinancialAssetRepository financialAssetRepository;
 
     @Transactional(readOnly = true)
-    public List<PeerCardResponse> getRandomPeers(Long userId) {
+    public List<PeerCardResponse> getRandomPeers(
+            Long userId,
+            int size
+    ) {
+        validatePeerCardSize(size);
+
         List<PeerMatch> peerMatches =
                 peerMatchRepository.findAllByTargetUserId(userId);
 
@@ -48,9 +54,18 @@ public class PeerQueryService {
         Collections.shuffle(shuffledPeers);
 
         return shuffledPeers.stream()
-                .limit(PEER_CARD_COUNT)
+                .limit(size)
                 .map(PeerCardResponse::from)
                 .toList();
+    }
+
+    private void validatePeerCardSize(int size) {
+        if (size < MIN_PEER_CARD_COUNT
+                || size > MAX_PEER_CARD_COUNT) {
+            throw new ProjectException(
+                    GeneralErrorCode.BAD_REQUEST
+            );
+        }
     }
 
     @Transactional(readOnly = true)

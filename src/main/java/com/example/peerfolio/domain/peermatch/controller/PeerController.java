@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,10 +31,14 @@ public class PeerController {
 
     @GetMapping("/random")
     public ApiResponse<List<PeerCardResponse>> getRandomPeers(
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "3") int size
     ) {
         List<PeerCardResponse> response =
-                peerQueryService.getRandomPeers(user.getId());
+                peerQueryService.getRandomPeers(
+                        user.getId(),
+                        size
+                );
 
         return ApiResponse.onSuccess(
                 GeneralSuccessCode.OK, response
