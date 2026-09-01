@@ -43,7 +43,7 @@ public class SmtpEmailSender implements EmailSender {
 
 			javaMailSender.send(message);
 		} catch (MessagingException | MailException e) {
-			log.error("Failed to send verification email. to={}", to, e);
+			log.error("인증 메일 전송에 실패했습니다.", e);
 			throw new ProjectException(AuthErrorCode.EMAIL_SEND_FAILED);
 		}
 	}
