@@ -1,6 +1,7 @@
 package com.example.peerfolio.domain.peermatch.controller;
 
 import com.example.peerfolio.domain.peermatch.dto.PeerCardResponse;
+import com.example.peerfolio.domain.peermatch.dto.PeerComparisonResponse;
 import com.example.peerfolio.domain.peermatch.service.PeerQueryService;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.global.apiPayload.ApiResponse;
@@ -8,6 +9,7 @@ import com.example.peerfolio.global.apiPayload.code.GeneralSuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,5 +34,19 @@ public class PeerController {
         );
     }
 
+    @GetMapping("/{peerUserId}")
+    public ApiResponse<PeerComparisonResponse> getPeerComparison(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long peerUserId
+    ) {
+        PeerComparisonResponse response =
+                peerQueryService.getPeerComparison(
+                        user,
+                        peerUserId
+                );
 
+        return ApiResponse.onSuccess(
+                GeneralSuccessCode.OK, response
+        );
+    }
 }
