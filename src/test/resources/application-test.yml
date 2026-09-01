@@ -14,6 +14,12 @@ spring:
       hibernate:
         format_sql: true
 
+  mail:
+    host: localhost
+    port: 587
+    username: test@example.com
+    password: test-password
+
 jwt:
   secret: peerfolio-test-jwt-secret-key-for-test-environment-only
   expiration: 3600000
@@ -21,3 +27,6 @@ jwt:
 auth:
   email-code:
     expose-in-response: false
+
+cors:
+  allowed-origins: http://localhost:3000

@@ -9,6 +9,7 @@ import com.example.peerfolio.domain.auth.dto.response.LoginResponse;
 import com.example.peerfolio.domain.auth.dto.response.SignupResponse;
 import com.example.peerfolio.domain.emailverification.entity.EmailVerification;
 import com.example.peerfolio.domain.emailverification.repository.EmailVerificationRepository;
+import com.example.peerfolio.domain.emailverification.service.EmailSender;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
@@ -41,6 +42,7 @@ public class AuthService {
 	private final TokenBlacklistService tokenBlacklistService;
 	private final NicknameGenerator nicknameGenerator;
 	private final VerificationCodeGenerator verificationCodeGenerator;
+	private final EmailSender emailSender;
 
 	@Transactional
 	public SignupResponse signup(SignupRequest request) {
@@ -78,6 +80,7 @@ public class AuthService {
 				.orElseGet(() -> EmailVerification.create(request.email(), code, expiresAt));
 
 		emailVerificationRepository.save(emailVerification);
+		emailSender.sendVerificationCode(request.email(), code, expiresAt);
 		String responseCode = exposeEmailCodeInResponse ? code : null;
 		return new EmailCodeResponse(request.email(), responseCode, expiresAt);
 	}
@@ -121,12 +124,18 @@ public class AuthService {
 			String code
 	) {
 		EmailVerification emailVerification = emailVerificationRepository.findByEmail(email)
-				.orElseThrow(() -> new ProjectException(GeneralErrorCode.BAD_REQUEST));
+				.orElseThrow(() -> new ProjectException(AuthErrorCode.EMAIL_CODE_NOT_FOUND));
 
-		if (emailVerification.getVerified()
-				|| emailVerification.isExpired(LocalDateTime.now())
-				|| !emailVerification.matches(code)) {
-			throw new ProjectException(GeneralErrorCode.BAD_REQUEST);
+		if (emailVerification.getVerified()) {
+			throw new ProjectException(AuthErrorCode.EMAIL_CODE_ALREADY_USED);
+		}
+
+		if (emailVerification.isExpired(LocalDateTime.now())) {
+			throw new ProjectException(AuthErrorCode.EMAIL_CODE_EXPIRED);
+		}
+
+		if (!emailVerification.matches(code)) {
+			throw new ProjectException(AuthErrorCode.EMAIL_CODE_MISMATCH);
 		}
 
 		emailVerification.verify();
