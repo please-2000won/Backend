@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PeerMatchRepository extends JpaRepository<PeerMatch, Long> {
 
@@ -20,4 +21,10 @@ public interface PeerMatchRepository extends JpaRepository<PeerMatch, Long> {
             where pm.targetUser.id = :targetUserId
             """)
     int deleteAllByTargetUserId(@Param("targetUserId") Long targetUserId);
+
+    @EntityGraph(attributePaths = "peerUser")
+    Optional<PeerMatch> findByTargetUserIdAndPeerUserId(
+            Long targetUserId,
+            Long peerUserId
+    );
 }
