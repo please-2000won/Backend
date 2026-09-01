@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.peerfolio.domain.emailverification.repository.EmailVerificationRepository;
 import com.example.peerfolio.domain.user.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,7 +145,49 @@ class AuthControllerIntegrationTest {
 								""".formatted(EMAIL, PASSWORD)))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.isSuccess").value(false))
-				.andExpect(jsonPath("$.code").value("COMMON400"));
+				.andExpect(jsonPath("$.code").value("AUTH_400_2"))
+				.andExpect(jsonPath("$.message").value("인증번호가 올바르지 않습니다."));
+	}
+
+	@Test
+	void signupFailsWhenVerificationCodeWasNotIssued() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/signup")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "name": "사용자",
+								  "email": "%s",
+								  "verificationCode": "123456",
+								  "password": "%s"
+								}
+								""".formatted(EMAIL, PASSWORD)))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("AUTH_404_1"))
+				.andExpect(jsonPath("$.message").value("발급된 인증번호가 없습니다. 인증번호를 먼저 발급받아 주세요."));
+	}
+
+	@Test
+	void signupFailsWhenVerificationCodeIsExpired() throws Exception {
+		requestEmailCode();
+		emailVerificationRepository.findByEmail(EMAIL)
+				.orElseThrow()
+				.updateCode("123456", LocalDateTime.now().minusSeconds(1));
+
+		mockMvc.perform(post("/api/v1/auth/signup")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "name": "사용자",
+								  "email": "%s",
+								  "verificationCode": "123456",
+								  "password": "%s"
+								}
+								""".formatted(EMAIL, PASSWORD)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.isSuccess").value(false))
+				.andExpect(jsonPath("$.code").value("AUTH_400_1"))
+				.andExpect(jsonPath("$.message").value("인증번호가 만료되었습니다. 인증번호를 다시 발급받아 주세요."));
 	}
 
 	@Test
