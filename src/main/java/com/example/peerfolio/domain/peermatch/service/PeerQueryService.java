@@ -12,9 +12,9 @@ import com.example.peerfolio.domain.peermatch.repository.PeerMatchRepository;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +53,18 @@ public class PeerQueryService {
         // 요청마다 피어 순서를 무작위로 섞음
         Collections.shuffle(shuffledPeers);
 
-        return shuffledPeers.stream()
+        Map<Long, PeerMatch> uniquePeerMatches =
+                new LinkedHashMap<>();
+
+        for (PeerMatch peerMatch : shuffledPeers) {
+            uniquePeerMatches.putIfAbsent(
+                    peerMatch.getPeerUser().getId(),
+                    peerMatch
+            );
+        }
+
+        return uniquePeerMatches.values()
+                .stream()
                 .limit(size)
                 .map(PeerCardResponse::from)
                 .toList();
