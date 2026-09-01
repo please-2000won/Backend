@@ -6,6 +6,8 @@ import com.example.peerfolio.domain.peermatch.service.PeerQueryService;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.global.apiPayload.ApiResponse;
 import com.example.peerfolio.global.apiPayload.code.GeneralSuccessCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,10 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/peers")
+@Tag(
+        name = "Peer",
+        description = "피어 카드 및 금융정보 상세 비교 API"
+)
 public class PeerController {
 
     private final PeerQueryService peerQueryService;
@@ -35,6 +41,13 @@ public class PeerController {
     }
 
     @GetMapping("/{peerUserId}")
+    @Operation(
+            summary = "선택 피어와 내 금융정보 비교",
+            description = """
+                JWT 인증 사용자와 현재 피어 그룹에 포함된
+                선택 피어의 경제적 여건 및 투자자산을 비교합니다.
+                """
+    )
     public ApiResponse<PeerComparisonResponse> getPeerComparison(
             @AuthenticationPrincipal User user,
             @PathVariable Long peerUserId
