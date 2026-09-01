@@ -27,4 +27,12 @@ public interface PeerMatchRepository extends JpaRepository<PeerMatch, Long> {
             Long targetUserId,
             Long peerUserId
     );
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            delete from PeerMatch pm
+            where pm.targetUser.id = :userId
+               or pm.peerUser.id = :userId
+            """)
+    int deleteAllByUserId(@Param("userId") Long userId);
 }

@@ -1,20 +1,29 @@
 package com.example.peerfolio.domain.user.controller;
 
+import com.example.peerfolio.domain.user.dto.request.DeleteAccountRequest;
 import com.example.peerfolio.domain.user.dto.response.UserMeResponse;
 import com.example.peerfolio.domain.user.entity.User;
+import com.example.peerfolio.domain.user.service.UserService;
 import com.example.peerfolio.global.apiPayload.ApiResponse;
 import com.example.peerfolio.global.apiPayload.code.GeneralSuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
 @Tag(name = "User", description = "사용자 정보 API")
 public class UserController {
+
+	private final UserService userService;
 
 	@GetMapping("/me")
 	@Operation(
@@ -28,5 +37,18 @@ public class UserController {
 				GeneralSuccessCode.OK,
 				UserMeResponse.from(user)
 		);
+	}
+
+	@DeleteMapping("/me")
+	@Operation(
+			summary = "회원 탈퇴",
+			description = "JWT 인증된 사용자의 현재 비밀번호를 검증한 뒤 계정과 연관 데이터를 삭제합니다."
+	)
+	public ApiResponse<Void> deleteAccount(
+			@AuthenticationPrincipal User user,
+			@Valid @RequestBody DeleteAccountRequest request
+	) {
+		userService.deleteAccount(user, request);
+		return ApiResponse.onSuccess(GeneralSuccessCode.OK, null);
 	}
 }
