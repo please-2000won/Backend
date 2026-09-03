@@ -29,7 +29,16 @@ public class AnalysisService {
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
     public AnalysisResponse createAnalysis(User user) {
-        String currentInputHash = analysisInputHashService.generate(user.getId());
+        AnalysisPreparation preparation =
+                analysisPreparationService.prepareAnalysis(
+                        user.getId()
+                );
+
+        // 해시와 AI 분석이 반드시 같은 금융정보 스냅샷을 사용하도록 준비 결과에서 생성
+        String currentInputHash = analysisInputHashService.generate(
+                preparation.targetProfile(),
+                preparation.targetAsset()
+        );
 
         // 사용자 금융정보가 이전 분석 시점과 같으면 OpenAI를 다시 호출하지 않음
         AnalysisResult existingResult = analysisResultRepository
@@ -40,11 +49,6 @@ public class AnalysisService {
         if (existingResult != null) {
             return toResponse(existingResult, false);
         }
-
-        AnalysisPreparation preparation =
-                analysisPreparationService.prepareAnalysis(
-                        user.getId()
-                );
 
         String benchmarkResultJson =
                 serializeBenchmarkResult(

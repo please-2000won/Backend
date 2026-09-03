@@ -8,12 +8,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.peerfolio.domain.analysisresult.ai.AiAnalysisClient;
+import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
 import com.example.peerfolio.domain.analysisresult.dto.PeerProfileBenchmark;
 import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
 import com.example.peerfolio.domain.analysisresult.repository.AnalysisResultRepository;
+import com.example.peerfolio.domain.peermatch.dto.PeerAssetData;
+import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
 import com.example.peerfolio.domain.user.entity.User;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -48,9 +51,22 @@ class AnalysisServiceTest {
         );
         AnalysisResponse.RiskResult riskResult =
                 new AnalysisResponse.RiskResult("LOW", "위험도가 낮습니다.");
+        PeerProfileData targetProfile = new PeerProfileData(
+                1L, 25, 2_500_000L, 800_000L, 500_000L, 10_000_000L, 2_000_000L
+        );
+        PeerAssetData targetAsset = new PeerAssetData(
+                1L, 1_000_000L, 2_000_000L, 3_000_000L, 500_000L
+        );
+        AnalysisPreparation preparation = new AnalysisPreparation(
+                targetProfile,
+                targetAsset,
+                java.util.List.of(),
+                benchmarkResult
+        );
 
         when(user.getId()).thenReturn(1L);
-        when(hashService.generate(1L)).thenReturn("same-hash");
+        when(preparationService.prepareAnalysis(1L)).thenReturn(preparation);
+        when(hashService.generate(targetProfile, targetAsset)).thenReturn("same-hash");
         when(resultRepository.findByUserId(1L)).thenReturn(Optional.of(existingResult));
         when(existingResult.getInputHash()).thenReturn("same-hash");
         when(existingResult.getId()).thenReturn(10L);
@@ -67,7 +83,6 @@ class AnalysisServiceTest {
 
         assertEquals(10L, response.analysisResultId());
         assertFalse(response.canReanalyze());
-        verify(preparationService, never()).prepareAnalysis(1L);
         verify(aiAnalysisClient, never()).analyzePeerBenchmark(null, null, null);
         verify(resultWriter, never()).replaceAnalysisResult(null, null, null, null, null);
     }
