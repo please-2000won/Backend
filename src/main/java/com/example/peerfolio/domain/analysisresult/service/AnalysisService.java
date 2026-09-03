@@ -55,9 +55,10 @@ public class AnalysisService {
             return toResponse(existingResult, false);
         }
 
+        Long executionId;
         // 실행 레코드 등록 시도, 동시 요청이 먼저 등록했다면 유니크 제약 위반 발생
         try {
-            analysisExecutionService.claim(
+            executionId = analysisExecutionService.claim(
                     user.getId(),
                     currentInputHash
             );
@@ -92,10 +93,7 @@ public class AnalysisService {
             return toResponse(analysisResult, false);
         } finally {
             // 성공 여부 관계 없이 실행 상태 제거
-            analysisExecutionService.release(
-                    user.getId(),
-                    currentInputHash
-            );
+            analysisExecutionService.release(executionId);
         }
 
     }

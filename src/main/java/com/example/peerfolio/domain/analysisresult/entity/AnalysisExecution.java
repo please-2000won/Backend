@@ -37,6 +37,9 @@ public class AnalysisExecution {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private LocalDateTime expiresAt;
+
     public static AnalysisExecution create(
             User user,
             String inputHash
@@ -45,6 +48,7 @@ public class AnalysisExecution {
                 .user(user)
                 .inputHash(inputHash)
                 .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
                 .build();
     }
 }
