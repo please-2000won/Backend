@@ -24,11 +24,13 @@ public class AnalysisExecutionService {
             Long userId,
             String inputHash
     ) {
-        // 동일 입력의 만료된 실행 정보가 있으면 먼저 제거
+        LocalDateTime now = LocalDateTime.now();
+
+        // 동일 입력에 대해 만료된 실행 레코드가 있다면 제거
         analysisExecutionRepository.deleteExpired(
                 userId,
                 inputHash,
-                LocalDateTime.now()
+                now
         );
 
         User user = userRepository.getReferenceById(userId);
@@ -39,7 +41,11 @@ public class AnalysisExecutionService {
                         inputHash
                 );
 
-        return execution.getId();
+        // INSERT를 즉시 실행해 복합 유니크 제약 충돌을 여기서 감지
+        AnalysisExecution savedExecution =
+                analysisExecutionRepository.saveAndFlush(execution);
+
+        return savedExecution.getId();
     }
 
     // AI 호출 성공 또는 실패 후 실행 상태 제거
