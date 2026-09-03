@@ -130,10 +130,10 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
         Use economic conditions to explain comparisons with the peer group.
 
-        Assess risk primarily based on debt burden,
+        Consider debt burden,
         fixed expenses relative to income,
         the risk characteristics of investment asset types,
-        and investment concentration.
+        and investment concentration when assessing risk.
 
         [Risk Score]
 
