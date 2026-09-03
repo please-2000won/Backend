@@ -18,4 +18,9 @@ public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, 
             where ar.user.id = :userId
             """)
     int deleteAllByUserId(@Param("userId") Long userId);
+
+    Optional<AnalysisResult> findByUserIdAndInputHash(
+            Long userId,
+            String inputHash
+    );
 }

@@ -1,6 +1,7 @@
 package com.example.peerfolio.domain.analysisresult.service;
 
 import com.example.peerfolio.domain.analysisresult.ai.AiAnalysisClient;
+import com.example.peerfolio.domain.analysisresult.code.AnalysisErrorCode;
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
@@ -11,6 +12,7 @@ import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
@@ -26,6 +28,7 @@ public class AnalysisService {
     private final AnalysisResultRepository analysisResultRepository;
     private final AnalysisInputHashService analysisInputHashService;
     private final ObjectMapper objectMapper;
+    private final AnalysisExecutionService analysisExecutionService;
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
     public AnalysisResponse createAnalysis(User user) {
@@ -42,36 +45,59 @@ public class AnalysisService {
 
         // 사용자 금융정보가 이전 분석 시점과 같으면 OpenAI를 다시 호출하지 않음
         AnalysisResult existingResult = analysisResultRepository
-                .findByUserId(user.getId())
-                .filter(result -> currentInputHash.equals(result.getInputHash()))
+                .findByUserIdAndInputHash(
+                        user.getId(),
+                        currentInputHash
+                )
                 .orElse(null);
 
         if (existingResult != null) {
             return toResponse(existingResult, false);
         }
 
-        String benchmarkResultJson =
-                serializeBenchmarkResult(
-                        preparation.benchmarkResult()
-                );
+        // 실행 레코드 등록 시도, 동시 요청이 먼저 등록했다면 유니크 제약 위반 발생
+        try {
+            analysisExecutionService.claim(
+                    user.getId(),
+                    currentInputHash
+            );
+        } catch (DataIntegrityViolationException e) {
+            throw new ProjectException(
+                    AnalysisErrorCode.ANALYSIS_IN_PROGRESS
+            );
+        }
 
-        AiAnalysisResult aiAnalysisResult =
-                aiAnalysisClient.analyzePeerBenchmark(
-                        preparation.targetProfile(),
-                        preparation.targetAsset(),
-                        preparation.benchmarkResult()
-                );
+        try {
+            String benchmarkResultJson =
+                    serializeBenchmarkResult(
+                            preparation.benchmarkResult()
+                    );
 
-        AnalysisResult analysisResult =
-                analysisResultWriter.replaceAnalysisResult(
-                        user.getId(),
-                        preparation,
-                        aiAnalysisResult,
-                        benchmarkResultJson,
-                        currentInputHash
-                );
+            AiAnalysisResult aiAnalysisResult =
+                    aiAnalysisClient.analyzePeerBenchmark(
+                            preparation.targetProfile(),
+                            preparation.targetAsset(),
+                            preparation.benchmarkResult()
+                    );
 
-        return toResponse(analysisResult, false);
+            AnalysisResult analysisResult =
+                    analysisResultWriter.replaceAnalysisResult(
+                            user.getId(),
+                            preparation,
+                            aiAnalysisResult,
+                            benchmarkResultJson,
+                            currentInputHash
+                    );
+
+            return toResponse(analysisResult, false);
+        } finally {
+            // 성공 여부 관계 없이 실행 상태 제거
+            analysisExecutionService.release(
+                    user.getId(),
+                    currentInputHash
+            );
+        }
+
     }
 
     private String serializeBenchmarkResult(BenchmarkResult benchmarkResult) {
