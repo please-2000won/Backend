@@ -19,6 +19,9 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 
+import java.text.BreakIterator;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +31,9 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
     private static final Set<String> RISK_LEVELS =
             Set.of("LOW", "MEDIUM", "HIGH");
+
+    private static final int REQUIRED_PARAGRAPH_COUNT = 3;
+    private static final int MAX_SENTENCE_COUNT = 5;
 
     private static final String INSTRUCTIONS = """
         You are a financial analysis assistant that evaluates a user's financial condition
@@ -367,9 +373,12 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
     private AiAnalysisResult parseAnalysisResult(String responseText) {
         try {
             OpenAiAnalysisPayload payload =
-                    objectMapper.readValue(responseText, OpenAiAnalysisPayload.class);
+                    objectMapper.readValue(
+                            responseText,
+                            OpenAiAnalysisPayload.class
+                    );
 
-            validate(payload);
+            String normalizedAnalysisComment = validate(payload);
 
             // riskResult 객체는 DB JSON 컬럼에 저장할 문자열로 변환
             String riskResultJson =
@@ -380,45 +389,105 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
             return new AiAnalysisResult(
                     riskResultJson,
                     payload.totalRiskScore(),
-                    payload.analysisComment()
+                    normalizedAnalysisComment
             );
-        } catch (JacksonException e) {
-            throw new ProjectException(
-                    OpenAiErrorCode.INVALID_RESPONSE
-            );
+        } catch (JacksonException exception) {
+            throw invalidResponse();
         }
     }
 
-    private void validate(OpenAiAnalysisPayload payload) {
+    private String validate(OpenAiAnalysisPayload payload) {
         if (payload == null
                 || payload.riskResult() == null
+                || payload.riskResult().riskLevel() == null
+                || payload.riskResult().summary() == null
+                || payload.riskResult().summary().isBlank()
                 || payload.totalRiskScore() == null
                 || payload.analysisComment() == null
-                || payload.analysisComment().isBlank()
-                || payload.riskResult().riskLevel() == null
-                ||  payload.riskResult().summary() == null
-                || payload.riskResult().summary().isBlank()) {
-            throw new ProjectException(
-                    OpenAiErrorCode.INVALID_RESPONSE
-            );
+                || payload.analysisComment().isBlank()) {
+            throw invalidResponse();
         }
 
-        int score = payload.totalRiskScore();
-
-        if (score < 0 || score > 100) {
-            throw new ProjectException(
-                    OpenAiErrorCode.INVALID_RESPONSE
-            );
-        }
-
+        int totalRiskScore = payload.totalRiskScore();
         String riskLevel = payload.riskResult().riskLevel();
 
-        if (!RISK_LEVELS.contains(riskLevel)
-                || !isConsistentRiskLevel(riskLevel, score)) {
-            throw new ProjectException(
-                    OpenAiErrorCode.INVALID_RESPONSE
-            );
+        if (totalRiskScore < 0 || totalRiskScore > 100) {
+            throw invalidResponse();
         }
+
+        if (!RISK_LEVELS.contains(riskLevel)) {
+            throw invalidResponse();
+        }
+
+        if (!isConsistentRiskLevel(riskLevel, totalRiskScore)) {
+            throw invalidResponse();
+        }
+
+        return validateAnalysisComment(
+                payload.analysisComment()
+        );
+    }
+
+    private String validateAnalysisComment(String analysisComment) {
+        // CRLF와 CR을 LF로 통일하여 저장 형식도 일관되게 유지
+        String normalizedComment = analysisComment
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .trim();
+
+        String[] paragraphs =
+                normalizedComment.split("\n\n", -1);
+
+        // 정확히 세 문단이어야 함
+        if (paragraphs.length != REQUIRED_PARAGRAPH_COUNT) {
+            throw invalidResponse();
+        }
+
+        // 각 문단은 비어 있으면 안 됨
+        boolean hasBlankParagraph = Arrays.stream(paragraphs)
+                .anyMatch(String::isBlank);
+
+        if (hasBlankParagraph) {
+            throw invalidResponse();
+        }
+
+        // 전체 문장은 최대 다섯 문장
+        int sentenceCount = countSentences(normalizedComment);
+
+        if (sentenceCount == 0
+                || sentenceCount > MAX_SENTENCE_COUNT) {
+            throw invalidResponse();
+        }
+
+        return normalizedComment;
+    }
+
+    private int countSentences(String text) {
+        BreakIterator iterator =
+                BreakIterator.getSentenceInstance(Locale.KOREAN);
+
+        iterator.setText(text);
+
+        int sentenceCount = 0;
+        int start = iterator.first();
+
+        for (
+                int end = iterator.next();
+                end != BreakIterator.DONE;
+                start = end, end = iterator.next()
+        ) {
+            if (!text.substring(start, end).isBlank()) {
+                sentenceCount++;
+            }
+        }
+
+        return sentenceCount;
+    }
+
+    private ProjectException invalidResponse() {
+        return new ProjectException(
+                OpenAiErrorCode.INVALID_RESPONSE
+        );
     }
 
     private boolean isConsistentRiskLevel(String riskLevel, int score) {
