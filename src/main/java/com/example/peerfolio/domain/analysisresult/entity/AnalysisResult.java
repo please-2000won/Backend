@@ -37,6 +37,11 @@ public class AnalysisResult {
 	@Column(nullable = false, columnDefinition = "text")
 	private String analysisComment;
 
+	// 분석에 사용한 사용자 금융정보의 해시값
+	// 기존 운영 데이터와의 호환을 위해 nullable로 둠, 새 분석부터 저장
+	@Column(length = 64)
+	private String inputHash;
+
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
@@ -46,7 +51,8 @@ public class AnalysisResult {
 			String benchmarkResult,
 			String riskResult,
 			Integer totalRiskScore,
-			String analysisComment
+			String analysisComment,
+			String inputHash
 	) {
 		return AnalysisResult.builder()
 				.user(user)
@@ -55,6 +61,7 @@ public class AnalysisResult {
 				.riskResult(riskResult)
 				.totalRiskScore(totalRiskScore)
 				.analysisComment(analysisComment)
+				.inputHash(inputHash)
 				.createdAt(LocalDateTime.now())
 				.build();
 	}

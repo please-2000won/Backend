@@ -9,7 +9,8 @@ public record AnalysisResponse(
         RiskResult riskResult,
         Integer totalRiskScore,
         String analysisComment,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean canReanalyze
 ) {
 
     public record RiskResult(

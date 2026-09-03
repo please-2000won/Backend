@@ -31,6 +31,7 @@ public class AnalysisController {
             description = """
                     JWT 인증 사용자의 금융정보를 기준으로 피어 그룹을 생성하고,
                     피어 그룹 평균과 비교한 AI 분석 결과를 저장합니다.
+                    금융정보가 이전 분석 시점과 같으면 OpenAI를 다시 호출하지 않고 기존 결과를 반환합니다.
                     기존 분석 결과와 피어 매칭은 새 분석이 성공한 경우에만 교체됩니다.
                     """
     )
@@ -50,7 +51,7 @@ public class AnalysisController {
             summary = "최신 AI 분석 결과 조회",
             description = """
                     JWT 인증 사용자의 가장 최근 피어 그룹 평균과
-                    AI 분석 결과를 조회합니다.
+                    AI 분석 결과 및 현재 금융정보의 재분석 가능 여부를 조회합니다.
                     """
     )
     public ApiResponse<AnalysisResponse> getLatestAnalysis(

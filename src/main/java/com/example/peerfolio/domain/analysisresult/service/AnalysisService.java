@@ -24,10 +24,23 @@ public class AnalysisService {
     private final AiAnalysisClient aiAnalysisClient;
     private final AnalysisResultWriter analysisResultWriter;
     private final AnalysisResultRepository analysisResultRepository;
+    private final AnalysisInputHashService analysisInputHashService;
     private final ObjectMapper objectMapper;
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
     public AnalysisResponse createAnalysis(User user) {
+        String currentInputHash = analysisInputHashService.generate(user.getId());
+
+        // 사용자 금융정보가 이전 분석 시점과 같으면 OpenAI를 다시 호출하지 않음
+        AnalysisResult existingResult = analysisResultRepository
+                .findByUserId(user.getId())
+                .filter(result -> currentInputHash.equals(result.getInputHash()))
+                .orElse(null);
+
+        if (existingResult != null) {
+            return toResponse(existingResult, false);
+        }
+
         AnalysisPreparation preparation =
                 analysisPreparationService.prepareAnalysis(
                         user.getId()
@@ -50,10 +63,11 @@ public class AnalysisService {
                         user.getId(),
                         preparation,
                         aiAnalysisResult,
-                        benchmarkResultJson
+                        benchmarkResultJson,
+                        currentInputHash
                 );
 
-        return toResponse(analysisResult);
+        return toResponse(analysisResult, false);
     }
 
     private String serializeBenchmarkResult(BenchmarkResult benchmarkResult) {
@@ -77,11 +91,15 @@ public class AnalysisService {
                         )
                 );
 
-        return toResponse(analysisResult);
+        String currentInputHash = analysisInputHashService.generate(user.getId());
+        boolean canReanalyze = !currentInputHash.equals(analysisResult.getInputHash());
+
+        return toResponse(analysisResult, canReanalyze);
     }
 
     private AnalysisResponse toResponse(
-            AnalysisResult analysisResult
+            AnalysisResult analysisResult,
+            boolean canReanalyze
     ) {
         try {
             BenchmarkResult benchmarkResult =
@@ -103,7 +121,8 @@ public class AnalysisService {
                     riskResult,
                     analysisResult.getTotalRiskScore(),
                     analysisResult.getAnalysisComment(),
-                    analysisResult.getCreatedAt()
+                    analysisResult.getCreatedAt(),
+                    canReanalyze
             );
 
         } catch (JacksonException exception) {
