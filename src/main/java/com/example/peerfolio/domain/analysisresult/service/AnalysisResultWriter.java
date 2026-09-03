@@ -29,7 +29,8 @@ public class AnalysisResultWriter {
             Long userId,
             AnalysisPreparation preparation,
             AiAnalysisResult aiAnalysisResult,
-            String benchmarkResultJson
+            String benchmarkResultJson,
+            String inputHash
     ) {
         // 같은 사용자의 저장 작업이 동시에 진행되지 않도록 잠금을 걸어둠
         User targetUser = userRepository
@@ -55,7 +56,8 @@ public class AnalysisResultWriter {
                         benchmarkResultJson,
                         aiAnalysisResult.riskResult(),
                         aiAnalysisResult.totalRiskScore(),
-                        aiAnalysisResult.analysisComment()
+                        aiAnalysisResult.analysisComment(),
+                        inputHash
                 );
 
         return analysisResultRepository.save(

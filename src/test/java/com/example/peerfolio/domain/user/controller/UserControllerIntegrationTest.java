@@ -139,7 +139,8 @@ class UserControllerIntegrationTest {
 				"{}",
 				"{}",
 				50,
-				"분석 결과입니다."
+				"분석 결과입니다.",
+				"test-input-hash"
 		));
 		chatMessageRepository.save(ChatMessage.create(
 				SenderType.USER,

@@ -273,7 +273,8 @@ class ChatControllerIntegrationTest {
 				objectMapper.writeValueAsString(benchmarkResult),
 				objectMapper.writeValueAsString(riskResult),
 				35,
-				"Asset allocation is more stable than peers."
+				"Asset allocation is more stable than peers.",
+				"test-input-hash"
 		));
 	}
 
