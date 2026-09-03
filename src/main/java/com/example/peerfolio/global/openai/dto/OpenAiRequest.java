@@ -41,6 +41,22 @@ public record OpenAiRequest(
             String input,
             Map<String, Object> schema
     ) {
+        return create(
+                model,
+                instructions,
+                input,
+                "peer_financial_analysis",
+                schema
+        );
+    }
+
+    public static OpenAiRequest create(
+            String model,
+            String instructions,
+            String input,
+            String schemaName,
+            Map<String, Object> schema
+    ) {
         return new OpenAiRequest(
                 model,
                 instructions,
@@ -48,7 +64,7 @@ public record OpenAiRequest(
                 false,
                 new TextConfig(
                         Format.jsonSchema(
-                                "peer_financial_analysis",
+                                schemaName,
                                 schema
                         )
                 )
