@@ -4,9 +4,7 @@ import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
 import com.example.peerfolio.domain.analysisresult.dto.PeerProfileBenchmark;
-import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
-import com.example.peerfolio.domain.financialasset.entity.FinancialAsset;
-import com.example.peerfolio.domain.financialprofile.entity.FinancialProfile;
+import com.example.peerfolio.domain.chatmessage.dto.ChatPromptContext;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import com.example.peerfolio.global.openai.client.OpenAiClient;
@@ -54,18 +52,14 @@ public class OpenAiChatClient implements ChatAiClient {
 
 	@Override
 	public String generateAnswer(
-			AnalysisResult analysisResult,
-			FinancialProfile financialProfile,
-			FinancialAsset financialAsset,
+			ChatPromptContext context,
 			String message
 	) {
 		OpenAiRequest request = OpenAiRequest.create(
 				properties.model(),
 				INSTRUCTIONS,
 				createInput(
-						analysisResult,
-						financialProfile,
-						financialAsset,
+						context,
 						message
 				),
 				SCHEMA_NAME,
@@ -77,15 +71,13 @@ public class OpenAiChatClient implements ChatAiClient {
 	}
 
 	private String createInput(
-			AnalysisResult analysisResult,
-			FinancialProfile financialProfile,
-			FinancialAsset financialAsset,
+			ChatPromptContext context,
 			String message
 	) {
 		BenchmarkResult benchmarkResult =
-				parseBenchmarkResult(analysisResult);
+				parseBenchmarkResult(context);
 		AnalysisResponse.RiskResult riskResult =
-				parseRiskResult(analysisResult);
+				parseRiskResult(context);
 		InvestmentBenchmark investmentBenchmark =
 				benchmarkResult.investment();
 		PeerProfileBenchmark profileBenchmark =
@@ -125,26 +117,26 @@ public class OpenAiChatClient implements ChatAiClient {
 				[Current Question]
 				%s
 				""".formatted(
-				financialProfile.getAge(),
-				financialProfile.getMonthlyIncome(),
-				financialProfile.getFixedExpense(),
-				financialProfile.getSavingsGoal(),
-				financialProfile.getTotalAssetAmount(),
-				financialProfile.getTotalDebtAmount(),
-				financialAsset.getDepositBondAmount(),
-				formatRatio(financialAsset.getDepositBondAmount(), financialAsset),
-				financialAsset.getDomesticStockAmount(),
-				formatRatio(financialAsset.getDomesticStockAmount(), financialAsset),
-				financialAsset.getForeignStockAmount(),
-				formatRatio(financialAsset.getForeignStockAmount(), financialAsset),
-				financialAsset.getAlternativeAmount(),
-				formatRatio(financialAsset.getAlternativeAmount(), financialAsset),
-				analysisResult.getId(),
-				analysisResult.getPeerCount(),
-				analysisResult.getTotalRiskScore(),
+				context.age(),
+				context.monthlyIncome(),
+				context.fixedExpense(),
+				context.savingsGoal(),
+				context.totalAssetAmount(),
+				context.totalDebtAmount(),
+				context.depositBondAmount(),
+				formatRatio(context.depositBondAmount(), context),
+				context.domesticStockAmount(),
+				formatRatio(context.domesticStockAmount(), context),
+				context.foreignStockAmount(),
+				formatRatio(context.foreignStockAmount(), context),
+				context.alternativeAmount(),
+				formatRatio(context.alternativeAmount(), context),
+				context.analysisResultId(),
+				context.peerCount(),
+				context.totalRiskScore(),
 				riskResult.riskLevel(),
 				riskResult.summary(),
-				analysisResult.getAnalysisComment(),
+				context.analysisComment(),
 				profileBenchmark.averageMonthlyIncome(),
 				profileBenchmark.averageTotalAssetAmount(),
 				formatRatio(investmentBenchmark.averageDepositBondRatio()),
@@ -156,11 +148,11 @@ public class OpenAiChatClient implements ChatAiClient {
 	}
 
 	private BenchmarkResult parseBenchmarkResult(
-			AnalysisResult analysisResult
+			ChatPromptContext context
 	) {
 		try {
 			return objectMapper.readValue(
-					analysisResult.getBenchmarkResult(),
+					context.benchmarkResult(),
 					BenchmarkResult.class
 			);
 		} catch (JacksonException e) {
@@ -171,11 +163,11 @@ public class OpenAiChatClient implements ChatAiClient {
 	}
 
 	private AnalysisResponse.RiskResult parseRiskResult(
-			AnalysisResult analysisResult
+			ChatPromptContext context
 	) {
 		try {
 			return objectMapper.readValue(
-					analysisResult.getRiskResult(),
+					context.riskResult(),
 					AnalysisResponse.RiskResult.class
 			);
 		} catch (JacksonException e) {
@@ -209,12 +201,12 @@ public class OpenAiChatClient implements ChatAiClient {
 
 	private String formatRatio(
 			Long amount,
-			FinancialAsset financialAsset
+			ChatPromptContext context
 	) {
-		long total = financialAsset.getDepositBondAmount()
-				+ financialAsset.getDomesticStockAmount()
-				+ financialAsset.getForeignStockAmount()
-				+ financialAsset.getAlternativeAmount();
+		long total = context.depositBondAmount()
+				+ context.domesticStockAmount()
+				+ context.foreignStockAmount()
+				+ context.alternativeAmount();
 
 		if (total <= 0) {
 			return "0.0";
