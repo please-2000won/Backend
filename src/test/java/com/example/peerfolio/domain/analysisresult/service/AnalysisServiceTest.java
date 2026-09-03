@@ -2,10 +2,7 @@ package com.example.peerfolio.domain.analysisresult.service;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.peerfolio.domain.analysisresult.ai.AiAnalysisClient;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
@@ -33,6 +30,7 @@ class AnalysisServiceTest {
         AnalysisResultRepository resultRepository = mock(AnalysisResultRepository.class);
         AnalysisInputHashService hashService = mock(AnalysisInputHashService.class);
         ObjectMapper objectMapper = new ObjectMapper();
+        AnalysisExecutionService executionService = mock(AnalysisExecutionService.class);
 
         AnalysisService analysisService = new AnalysisService(
                 preparationService,
@@ -40,7 +38,8 @@ class AnalysisServiceTest {
                 resultWriter,
                 resultRepository,
                 hashService,
-                objectMapper
+                objectMapper,
+                executionService
         );
 
         User user = mock(User.class);
@@ -67,7 +66,12 @@ class AnalysisServiceTest {
         when(user.getId()).thenReturn(1L);
         when(preparationService.prepareAnalysis(1L)).thenReturn(preparation);
         when(hashService.generate(targetProfile, targetAsset)).thenReturn("same-hash");
-        when(resultRepository.findByUserId(1L)).thenReturn(Optional.of(existingResult));
+        when(
+                resultRepository.findByUserIdAndInputHash(
+                        1L,
+                        "same-hash"
+                )
+        ).thenReturn(Optional.of(existingResult));
         when(existingResult.getInputHash()).thenReturn("same-hash");
         when(existingResult.getId()).thenReturn(10L);
         when(existingResult.getPeerCount()).thenReturn(3);
@@ -83,7 +87,7 @@ class AnalysisServiceTest {
 
         assertEquals(10L, response.analysisResultId());
         assertFalse(response.canReanalyze());
-        verify(aiAnalysisClient, never()).analyzePeerBenchmark(null, null, null);
-        verify(resultWriter, never()).replaceAnalysisResult(null, null, null, null, null);
+        verify(preparationService).prepareAnalysis(1L);
+        verifyNoInteractions(aiAnalysisClient, resultWriter, executionService);
     }
 }
