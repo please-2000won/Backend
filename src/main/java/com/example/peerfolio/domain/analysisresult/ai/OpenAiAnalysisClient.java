@@ -136,31 +136,120 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
         Use economic conditions to explain comparisons with the peer group.
 
-        Consider debt burden,
-        fixed expenses relative to income,
-        the risk characteristics of investment asset types,
-        and investment concentration when assessing risk.
+        Consider debt burden, fixed expenses relative to income,
+        the risk characteristics of investment asset types, and investment concentration when assessing risk.
 
         [Risk Score]
 
-        Generate an overall risk score from 0 to 100.
-        A lower score indicates lower risk,
-        while a higher score indicates higher risk.
+        This score is a service-specific reference indicator summarizing
+        financial and investment allocation warning signs observable
+        in the provided data.
+        It is not a validated financial risk model and does not represent
+        the probability of loss, creditworthiness, or a professional
+        financial risk assessment.
 
-        Do not convert differences from peer-group averages directly into risk points.
+        The fixed scoring rules below are the sole basis for totalRiskScore.
+        The preceding Risk Assessment section is for qualitative explanation only.
+        Do not use it to add or subtract points beyond these rules.
 
-        Prioritize the user's absolute investment concentration
-        and the risk characteristics of each asset type.
+        Score only the following four categories.
+        Do not apply discretionary adjustments, bonuses, or deductions.
 
-        Use debt burden and fixed expenses relative to income as secondary factors.
+        1. Combined stock allocation: maximum 30 points
 
-        Use the following risk levels:
+        Add the domestic stock and foreign stock percentages
+        within total investment assets.
+
+        - 30% or less: 0 points
+        - More than 30% and up to 60%: 10 points
+        - More than 60% and up to 80%: 20 points
+        - More than 80%: 30 points
+
+        2. Alternative/high-risk asset allocation: maximum 30 points
+
+        Use the percentage of alternative/high-risk assets
+        within total investment assets.
+
+        - Exactly 0%: 0 points
+        - More than 0% and up to 10%: 10 points
+        - More than 10% and up to 30%: 20 points
+        - More than 30%: 30 points
+
+        3. Debt relative to cash and cash-equivalent holdings:
+        maximum 20 points
+
+        Calculate:
+        totalDebtAmount / totalAssetAmount * 100
+
+        In this service, totalAssetAmount represents cash and
+        cash-equivalent holdings only and excludes investment assets.
+        Do not describe this ratio as debt relative to total assets.
+
+        - Debt is zero: 0 points
+        - More than 0% and up to 50%: 5 points
+        - More than 50% and up to 100%: 10 points
+        - More than 100%: 20 points
+
+        4. Fixed expenses relative to monthly income:
+        maximum 20 points
+
+        Calculate:
+        fixedExpense / monthlyIncome * 100
+
+        Do not include savingsGoal in fixed expenses.
+
+        - 40% or less: 0 points
+        - More than 40% and up to 60%: 5 points
+        - More than 60% and up to 80%: 10 points
+        - More than 80%: 20 points
+
+        [Scoring Exceptions]
+
+        If total investment assets are zero,
+        assign 0 points to categories 1 and 2.
+        This means there is no investment exposure; it does not mean
+        the user's overall financial condition is safe.
+
+        If debt is zero, assign 0 points to category 3,
+        even when cash and cash-equivalent holdings are also zero.
+
+        If cash and cash-equivalent holdings are zero and debt
+        is greater than zero, category 3 cannot be assessed.
+
+        If monthly income is zero, category 4 cannot be assessed.
+
+        Do not replace an unassessable category with zero points
+        or the maximum score.
+
+        If any category cannot be assessed,
+        do not generate a numeric totalRiskScore or assign LOW, MEDIUM, or HIGH.
+        Explain the assessment limitation neutrally in Korean.
+
+        [Total Score and Risk Level]
+
+        When all four categories can be assessed,
+        totalRiskScore must equal the sum of their scores.
+
+        Use unrounded values when determining scoring intervals.
+        Do not add separate concentration points or count the same
+        condition again outside the four categories.
+
+        Do not adjust the score based on differences from peer averages,
+        age, absolute income or asset amounts, savings intentions,
+        or the tone of the analysis.
+
+        Do not assume that holding deposits or bonds alone means
+        the user's financial condition is safe.
+        Do not infer missing information, including investment horizon,
+        individual financial products, or monthly debt repayments.
+
+        Determine the risk level strictly from totalRiskScore:
 
         - LOW: 0 to 33
         - MEDIUM: 34 to 66
         - HIGH: 67 to 100
 
-        The risk level and overall risk score must always be consistent.
+        The risk level and totalRiskScore must always be consistent.
 
         [Analysis Text]
 
