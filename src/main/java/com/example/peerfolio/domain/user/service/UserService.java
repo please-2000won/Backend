@@ -1,6 +1,7 @@
 package com.example.peerfolio.domain.user.service;
 
 import com.example.peerfolio.domain.analysisresult.repository.AnalysisResultRepository;
+import com.example.peerfolio.domain.chatfeedback.repository.ChatFeedbackRepository;
 import com.example.peerfolio.domain.chatmessage.repository.ChatMessageRepository;
 import com.example.peerfolio.domain.emailverification.repository.EmailVerificationRepository;
 import com.example.peerfolio.domain.financialasset.repository.FinancialAssetRepository;
@@ -28,6 +29,7 @@ public class UserService {
 	private final AnalysisResultRepository analysisResultRepository;
 	private final PeerMatchRepository peerMatchRepository;
 	private final ChatMessageRepository chatMessageRepository;
+	private final ChatFeedbackRepository chatFeedbackRepository;
 	private final EmailVerificationRepository emailVerificationRepository;
 	private final PasswordEncoder passwordEncoder;
 
@@ -46,6 +48,7 @@ public class UserService {
 		Long userId = user.getId();
 		String email = user.getEmail();
 
+		chatFeedbackRepository.deleteAllByUserId(userId);
 		chatMessageRepository.deleteAllByUserId(userId);
 		peerMatchRepository.deleteAllByUserId(userId);
 		analysisResultRepository.deleteAllByUserId(userId);

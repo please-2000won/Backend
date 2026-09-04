@@ -138,7 +138,8 @@ class ChatControllerIntegrationTest {
 								"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.result.answer").value("Your deposit and bond allocation is higher than the peer average."));
+				.andExpect(jsonPath("$.result.answer").value("Your deposit and bond allocation is higher than the peer average."))
+				.andExpect(jsonPath("$.result.responseId").isString());
 
 		assertThat(chatAiClient.lastAnalysisResultId)
 				.isEqualTo(analysisResult.getId());
