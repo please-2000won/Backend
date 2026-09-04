@@ -116,7 +116,7 @@ class ChatFeedbackControllerIntegrationTest {
 							.isEqualTo(analysisResult.getId());
 					assertThat(feedback.getResponseId())
 							.isEqualTo(responseId);
-							assertThat(feedback.getMessage())
+					assertThat(feedback.getMessage())
 							.isEqualTo("내 자산 배분은 또래와 비교해서 어떤가요?");
 					assertThat(feedback.getAnswer())
 							.isEqualTo("예금과 채권 비중이 또래 평균보다 높아 안정적인 편입니다.");

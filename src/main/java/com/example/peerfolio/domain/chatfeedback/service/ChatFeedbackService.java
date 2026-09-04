@@ -11,6 +11,7 @@ import com.example.peerfolio.domain.chatmessage.code.ChatErrorCode;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +56,15 @@ public class ChatFeedbackService {
 				request.comment()
 		);
 
-		ChatFeedback savedFeedback =
-				chatFeedbackRepository.save(feedback);
+		ChatFeedback savedFeedback;
+
+		try {
+			savedFeedback = chatFeedbackRepository.saveAndFlush(feedback);
+		} catch (DataIntegrityViolationException exception) {
+			throw new ProjectException(
+					ChatFeedbackErrorCode.DUPLICATE_FEEDBACK
+			);
+		}
 
 		return new ChatFeedbackResponse(
 				savedFeedback.getId()
