@@ -205,32 +205,59 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
         [Scoring Exceptions]
 
+        Distinguish a zero score from an excluded category.
+        A zero-scored category remains included in the available maximum.
+        An excluded category contributes neither points nor its maximum.
+
         If total investment assets are zero,
         assign 0 points to categories 1 and 2.
-        This means there is no investment exposure; it does not mean
-        the user's overall financial condition is safe.
+        Keep both categories included, with a combined maximum of 60 points.
+        This indicates no investment exposure, not overall financial safety.
 
-        If debt is zero, assign 0 points to category 3,
-        even when cash and cash-equivalent holdings are also zero.
+        If totalDebtAmount is zero,
+        assign 0 points to category 3 and keep its maximum of 20 points,
+        even when totalAssetAmount is also zero.
 
-        If cash and cash-equivalent holdings are zero and debt
-        is greater than zero, category 3 cannot be assessed.
+        If totalAssetAmount is zero and totalDebtAmount is greater than zero,
+        exclude category 3 and remove its maximum of 20 points.
+        Do not calculate the ratio or assign a substitute score.
 
-        If monthly income is zero, category 4 cannot be assessed.
-
-        Do not replace an unassessable category with zero points
-        or the maximum score.
-
-        If any category cannot be assessed,
-        do not generate a numeric totalRiskScore or assign LOW, MEDIUM, or HIGH.
-        Explain the assessment limitation neutrally in Korean.
+        If monthlyIncome is zero,
+        exclude category 4 and remove its maximum of 20 points.
+        Do not calculate the ratio or assign a substitute score.
 
         [Total Score and Risk Level]
 
-        When all four categories can be assessed,
-        totalRiskScore must equal the sum of their scores.
+        Calculate totalRiskScore using only included categories:
 
-        Use unrounded values when determining scoring intervals.
+        totalRiskScore =
+        round(
+            sum of included category scores
+            / sum of included category maximums
+            * 100
+        )
+
+        Use decimal division.
+        Use unrounded ratios when determining scoring intervals.
+        Round only the final score to the nearest integer,
+        with exact halves rounded up.
+
+        Category maximums are:
+        - Category 1: 30 points
+        - Category 2: 30 points
+        - Category 3: 20 points
+        - Category 4: 20 points
+
+        Categories 1 and 2 always remain included.
+        Therefore, the available maximum is always at least 60 points.
+
+        Example:
+        If category 4 is excluded and the other scores are 20, 10, and 10,
+        totalRiskScore = round(40 / 80 * 100) = 50.
+
+        Always return an integer totalRiskScore from 0 to 100.
+        Do not return null solely because a category was excluded.
+
         Do not add separate concentration points or count the same
         condition again outside the four categories.
 
@@ -238,12 +265,7 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
         age, absolute income or asset amounts, savings intentions,
         or the tone of the analysis.
 
-        Do not assume that holding deposits or bonds alone means
-        the user's financial condition is safe.
-        Do not infer missing information, including investment horizon,
-        individual financial products, or monthly debt repayments.
-
-        Determine the risk level strictly from totalRiskScore:
+        Determine riskLevel strictly from totalRiskScore:
 
         - LOW: 0 to 33
         - MEDIUM: 34 to 66
@@ -251,6 +273,30 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
         The risk level and totalRiskScore must always be consistent.
 
+        [Partial Assessment Disclosure]
+
+        If any category is excluded, this is a partial assessment.
+        Exclusion does not mean that the excluded financial burden
+        is absent or low.
+
+        In riskResult.summary, briefly identify the excluded category
+        and explain that the score reflects only assessable categories.
+
+        Include the same limitation naturally in the third paragraph
+        of analysisComment without adding another paragraph
+        or exceeding the existing five-sentence limit.
+
+        Do not present scores based on different included categories
+        as directly comparable.
+
+        Even if totalRiskScore is zero or riskLevel is LOW,
+        do not claim that the user's overall financial condition is safe.
+
+        Do not assume that holding deposits or bonds alone means
+        the user's financial condition is safe.
+        Do not infer missing information, including investment horizon,
+        individual financial products, or monthly debt repayments.
+        
         [Analysis Text]
 
         Prioritize the financial items with the greatest differences
