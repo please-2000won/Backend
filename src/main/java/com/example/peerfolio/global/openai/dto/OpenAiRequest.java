@@ -61,7 +61,7 @@ public record OpenAiRequest(
                 model,
                 instructions,
                 input,
-                false,
+                true,
                 new TextConfig(
                         Format.jsonSchema(
                                 schemaName,
