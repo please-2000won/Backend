@@ -26,6 +26,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -46,6 +48,9 @@ class FinancialInfoControllerIntegrationTest {
 
 	@Autowired
 	private JwtProvider jwtProvider;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	private User user;
 	private String authorization;
@@ -114,7 +119,8 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.result.financialProfile.monthlyIncome").value(2500000))
 				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(9000000))
 				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(6000000))
-				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000));
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000))
+				.andExpect(jsonPath("$.result.updatedAt").exists());
 
 		// then: 저장된 금융 정보를 다시 조회할 수 있다.
 		mockMvc.perform(get("/api/v1/financial-info")
@@ -124,16 +130,17 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.result.financialProfile.age").value(24))
 				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(9000000))
 				.andExpect(jsonPath("$.result.financialAsset.foreignStockAmount").value(2000000))
-				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000));
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(12000000))
+				.andExpect(jsonPath("$.result.updatedAt").exists());
 	}
 
 	@Test
 	void putFinancialInfoUpdatesExistingFinancialInfo() throws Exception {
 		// given: 이미 금융 정보가 저장되어 있다.
-		saveFinancialInfo();
+		String initialUpdatedAt = saveFinancialInfo();
 
 		// when: 같은 사용자가 금융 정보를 다시 저장한다.
-		mockMvc.perform(put("/api/v1/financial-info")
+		MvcResult updateResult = mockMvc.perform(put("/api/v1/financial-info")
 						.header(HttpHeaders.AUTHORIZATION, authorization)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
@@ -160,7 +167,14 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.result.financialProfile.monthlyIncome").value(3000000))
 				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(13000000))
 				.andExpect(jsonPath("$.result.financialAsset.depositBondAmount").value(8000000))
-				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000));
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000))
+				.andExpect(jsonPath("$.result.updatedAt").exists())
+				.andReturn();
+
+		String updatedAt = extractUpdatedAt(updateResult);
+
+		assertThat(updatedAt)
+				.isNotEqualTo(initialUpdatedAt);
 
 		// then: 기존 금융 정보가 새 값으로 수정된다.
 		mockMvc.perform(get("/api/v1/financial-info")
@@ -169,7 +183,8 @@ class FinancialInfoControllerIntegrationTest {
 				.andExpect(jsonPath("$.result.financialProfile.age").value(25))
 				.andExpect(jsonPath("$.result.financialProfile.netAssetAmount").value(13000000))
 				.andExpect(jsonPath("$.result.financialAsset.alternativeAmount").value(500000))
-				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000));
+				.andExpect(jsonPath("$.result.financialAsset.totalFinancialAssetAmount").value(15000000))
+				.andExpect(jsonPath("$.result.updatedAt").value(updatedAt));
 	}
 
 	@Test
@@ -348,8 +363,8 @@ class FinancialInfoControllerIntegrationTest {
 		}
 	}
 
-	private void saveFinancialInfo() throws Exception {
-		mockMvc.perform(put("/api/v1/financial-info")
+	private String saveFinancialInfo() throws Exception {
+		MvcResult result = mockMvc.perform(put("/api/v1/financial-info")
 						.header(HttpHeaders.AUTHORIZATION, authorization)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
@@ -370,7 +385,18 @@ class FinancialInfoControllerIntegrationTest {
 								  }
 								}
 								"""))
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andReturn();
+
+		return extractUpdatedAt(result);
+	}
+
+	private String extractUpdatedAt(MvcResult result) throws Exception {
+		return objectMapper.readTree(
+						result.getResponse().getContentAsString()
+				)
+				.at("/result/updatedAt")
+				.asText();
 	}
 
 	private int requestSaveFinancialInfo() throws Exception {
