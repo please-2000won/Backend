@@ -20,7 +20,7 @@ public record ChatFeedbackRequest(
 		String message,
 
 		@NotBlank(message = "답변은 필수입니다.")
-		// OpenAI 웅덥 스키마 maxLength 1200
+		// OpenAI 응답 스키마 maxLength 1200
 		@Size(max = 1200, message = "답변은 1200자 이하로 입력해주세요.")
 		String answer,
 
