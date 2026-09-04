@@ -4,6 +4,7 @@ import com.example.peerfolio.domain.chatmessage.dto.ChatPromptContext;
 import com.example.peerfolio.domain.chatmessage.dto.request.ChatRequest;
 import com.example.peerfolio.domain.chatmessage.dto.response.ChatResponse;
 import com.example.peerfolio.domain.user.entity.User;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class ChatService {
 				request.message()
 		);
 
-		return new ChatResponse(answer);
+		return new ChatResponse(
+				answer,
+				UUID.randomUUID().toString()
+		);
 	}
 }
