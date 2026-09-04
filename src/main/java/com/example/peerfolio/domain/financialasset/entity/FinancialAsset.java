@@ -9,6 +9,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,6 +46,9 @@ public class FinancialAsset {
 	@JoinColumn(name = "user_id", nullable = false, unique = true)
 	private User user;
 
+	@Column
+	private LocalDateTime updatedAt;
+
 	public static FinancialAsset create(
 			User user,
 			Long depositBondAmount,
@@ -56,6 +62,7 @@ public class FinancialAsset {
 				.domesticStockAmount(domesticStockAmount)
 				.foreignStockAmount(foreignStockAmount)
 				.alternativeAmount(alternativeAmount)
+				.updatedAt(currentUpdatedAt())
 				.build();
 	}
 
@@ -69,5 +76,34 @@ public class FinancialAsset {
 		this.domesticStockAmount = domesticStockAmount;
 		this.foreignStockAmount = foreignStockAmount;
 		this.alternativeAmount = alternativeAmount;
+		this.updatedAt = nextUpdatedAt(updatedAt);
+	}
+
+	@PrePersist
+	private void prePersist() {
+		if (updatedAt == null) {
+			updatedAt = currentUpdatedAt();
+		}
+	}
+
+	private static LocalDateTime currentUpdatedAt() {
+		return LocalDateTime.now()
+				.truncatedTo(ChronoUnit.MICROS);
+	}
+
+	private static LocalDateTime nextUpdatedAt(
+			LocalDateTime previousUpdatedAt
+	) {
+		LocalDateTime now = currentUpdatedAt();
+
+		if (previousUpdatedAt != null
+				&& !now.isAfter(previousUpdatedAt)) {
+			return previousUpdatedAt.plus(
+					1,
+					ChronoUnit.MICROS
+			);
+		}
+
+		return now;
 	}
 }
