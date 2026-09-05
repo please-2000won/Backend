@@ -5,6 +5,7 @@ import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentAllocation;
 import com.example.peerfolio.domain.analysisresult.dto.InvestmentBenchmark;
 import com.example.peerfolio.domain.analysisresult.calculator.InvestmentBenchmarkCalculator;
+import com.example.peerfolio.domain.analysisresult.risk.RiskScoreResult;
 import com.example.peerfolio.domain.peermatch.dto.PeerAssetData;
 import com.example.peerfolio.domain.peermatch.dto.PeerProfileData;
 import com.example.peerfolio.global.apiPayload.exception.ProjectException;
@@ -17,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-
 
 import java.text.BreakIterator;
 import java.util.Arrays;
@@ -92,71 +92,42 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
         treat all investment allocation percentages as zero
         and assign no risk based on investment concentration.
 
-        [Risk Assessment]
+        [Risk Factor Interpretation]
 
-        Do not consider the user risky solely because their asset allocation
-        differs from the peer-group average.
+        A difference from the peer-group average does not itself mean
+        that the user's investment composition is risky.
 
-        Consider the characteristics of each asset type
-        and the degree of concentration in a particular asset type.
+        A higher deposits-and-bonds allocation may be described as
+        a relatively defensive allocation.
+        A lower deposits-and-bonds allocation may be described as
+        having a relatively limited defensive-asset allocation.
 
-        Do not increase the risk assessment solely because the user's
-        deposits-and-bonds allocation is higher than the peer-group average.
+        Higher domestic-stock or foreign-stock allocation may be described
+        as greater exposure to market volatility.
 
-        If the deposits-and-bonds allocation is significantly lower,
-        it may be interpreted as a relatively limited defensive-asset allocation.
+        Higher alternative or high-risk asset allocation may be described
+        as greater exposure to higher-risk asset characteristics.
 
-        If domestic-stock or foreign-stock allocation is significantly higher
-        than the peer-group average,
-        interpret it as relatively greater exposure to market volatility.
+        Do not describe a high deposits-and-bonds allocation as a
+        concentration risk solely because it exceeds 50% or 70%.
 
-        If alternative or high-risk asset allocation is higher than the peer-group average,
-        give it greater weight in the risk assessment than other asset types.
-
-        If domestic stocks, foreign stocks, or alternative and high-risk assets
-        account for more than 50% of total investment assets,
-        identify a possibility of asset concentration.
-
-        If such an allocation exceeds 70%,
-        identify a high asset-concentration risk.
-
-        Do not apply these concentration thresholds to deposits and bonds.
-        Even if deposits and bonds exceed 50% or 70%,
-        do not increase the risk score solely for that reason.
-
-        You may provide a neutral explanation concerning liquidity or diversification.
-
-        Do not assign a higher risk level solely because the user is young
-        or because their monthly income, cash-equivalent assets,
+        Do not describe the user as riskier solely because they are young
+        or because their income, cash-equivalent assets,
         or investment assets are small in absolute terms.
 
-        Use economic conditions to explain comparisons with the peer group.
+        [Server-Calculated Risk Assessment]
 
-        Consider debt burden,
-        fixed expenses relative to income,
-        the risk characteristics of investment asset types,
-        and investment concentration when assessing risk.
+        The server has already calculated the user's investment and financial
+        risk assessment in `serverRiskAssessment`.
 
-        [Risk Score]
+        Treat `totalRiskScore`, `riskLevel`, and all category scores as final.
+        Do not recalculate, modify, override, or contradict these values.
 
-        Generate an overall risk score from 0 to 100.
-        A lower score indicates lower risk,
-        while a higher score indicates higher risk.
+        Use `riskScoreDetail` only to explain which factors contributed to the score.
+        The investment score is the greater of the stock score and the
+        alternative/high-risk asset score; do not add both scores together.
 
-        Do not convert differences from peer-group averages directly into risk points.
-
-        Prioritize the user's absolute investment concentration
-        and the risk characteristics of each asset type.
-
-        Use debt burden and fixed expenses relative to income as secondary factors.
-
-        Use the following risk levels:
-
-        - LOW: 0 to 33
-        - MEDIUM: 34 to 66
-        - HIGH: 67 to 100
-
-        The risk level and overall risk score must always be consistent.
+        Write `riskResult.summary` and `analysisComment` based on the server-calculated result.
 
         [Analysis Text]
 
@@ -197,7 +168,7 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
         by using two newline characters (`\\n\\n`).
 
         Limit the entire `analysisComment` to no more than five Korean sentences.
-        """;
+    """;
 
     private final OpenAiClient openAiClient;
     private final OpenAiProperties properties;
@@ -208,13 +179,15 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
     public AiAnalysisResult analyzePeerBenchmark(
             PeerProfileData targetProfile,
             PeerAssetData targetAsset,
-            BenchmarkResult benchmarkResult
+            BenchmarkResult benchmarkResult,
+            RiskScoreResult riskScoreResult
     ) {
         // 사용자 데이터와 익명화된 피어 그룹 평균만 JSON으로 변환
         String input = createInput(
                 targetProfile,
                 targetAsset,
-                benchmarkResult
+                benchmarkResult,
+                riskScoreResult
         );
 
         OpenAiRequest request = OpenAiRequest.create(
@@ -232,7 +205,8 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
     private String createInput(
             PeerProfileData targetProfile,
             PeerAssetData targetAsset,
-            BenchmarkResult benchmarkResult
+            BenchmarkResult benchmarkResult,
+            RiskScoreResult riskScoreResult
     ) {
         // 분석 대상 사용자의 투자자산 구성 비율
         InvestmentAllocation userAllocation =
@@ -354,7 +328,8 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
                 "comparison", Map.of(
                         "allocationDifferencePercentagePoints",
                         allocationDifferences
-                )
+                ),
+                "serverRiskAssessment", riskScoreResult
         );
 
         try {
