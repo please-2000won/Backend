@@ -7,6 +7,8 @@ import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
 import com.example.peerfolio.domain.analysisresult.dto.BenchmarkResult;
 import com.example.peerfolio.domain.analysisresult.repository.AnalysisResultRepository;
+import com.example.peerfolio.domain.analysisresult.risk.RiskScoreCalculator;
+import com.example.peerfolio.domain.analysisresult.risk.RiskScoreResult;
 import com.example.peerfolio.domain.user.entity.User;
 import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
 import com.example.peerfolio.global.apiPayload.code.GeneralErrorCode;
@@ -29,6 +31,7 @@ public class AnalysisService {
     private final AnalysisInputHashService analysisInputHashService;
     private final ObjectMapper objectMapper;
     private final AnalysisExecutionService analysisExecutionService;
+    private final RiskScoreCalculator riskScoreCalculator;
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
     public AnalysisResponse createAnalysis(User user) {
@@ -74,11 +77,18 @@ public class AnalysisService {
                             preparation.benchmarkResult()
                     );
 
+            RiskScoreResult riskScoreResult =
+                    riskScoreCalculator.calculateRiskScore(
+                            preparation.targetProfile(),
+                            preparation.targetAsset()
+                    );
+
             AiAnalysisResult aiAnalysisResult =
                     aiAnalysisClient.analyzePeerBenchmark(
                             preparation.targetProfile(),
                             preparation.targetAsset(),
-                            preparation.benchmarkResult()
+                            preparation.benchmarkResult(),
+                            riskScoreResult
                     );
 
             AnalysisResult analysisResult =
@@ -86,6 +96,7 @@ public class AnalysisService {
                             user.getId(),
                             preparation,
                             aiAnalysisResult,
+                            riskScoreResult,
                             benchmarkResultJson,
                             currentInputHash
                     );

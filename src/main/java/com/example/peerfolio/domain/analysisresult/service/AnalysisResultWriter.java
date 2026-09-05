@@ -2,8 +2,10 @@ package com.example.peerfolio.domain.analysisresult.service;
 
 import com.example.peerfolio.domain.analysisresult.dto.AiAnalysisResult;
 import com.example.peerfolio.domain.analysisresult.dto.AnalysisPreparation;
+import com.example.peerfolio.domain.analysisresult.dto.AnalysisResponse;
 import com.example.peerfolio.domain.analysisresult.entity.AnalysisResult;
 import com.example.peerfolio.domain.analysisresult.repository.AnalysisResultRepository;
+import com.example.peerfolio.domain.analysisresult.risk.RiskScoreResult;
 import com.example.peerfolio.domain.peermatch.dto.PeerMatchCandidate;
 import com.example.peerfolio.domain.peermatch.entity.PeerMatch;
 import com.example.peerfolio.domain.peermatch.repository.PeerMatchRepository;
@@ -15,6 +17,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -23,12 +27,14 @@ public class AnalysisResultWriter {
     private final UserRepository userRepository;
     private final AnalysisResultRepository analysisResultRepository;
     private final PeerMatchRepository peerMatchRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public AnalysisResult replaceAnalysisResult(
             Long userId,
             AnalysisPreparation preparation,
             AiAnalysisResult aiAnalysisResult,
+            RiskScoreResult riskScoreResult,
             String benchmarkResultJson,
             String inputHash
     ) {
@@ -49,13 +55,18 @@ public class AnalysisResultWriter {
                 preparation.peerCandidates()
         );
 
+        String riskResultJson = serializeRiskResult(
+                riskScoreResult,
+                aiAnalysisResult
+        );
+
         AnalysisResult analysisResult =
                 AnalysisResult.create(
                         targetUser,
                         preparation.peerCandidates().size(),
                         benchmarkResultJson,
-                        aiAnalysisResult.riskResult(),
-                        aiAnalysisResult.totalRiskScore(),
+                        riskResultJson,
+                        riskScoreResult.totalRiskScore(),
                         aiAnalysisResult.analysisComment(),
                         inputHash
                 );
@@ -88,5 +99,24 @@ public class AnalysisResultWriter {
                 .toList();
 
         peerMatchRepository.saveAll(peerMatches);
+    }
+
+    private String serializeRiskResult(
+            RiskScoreResult riskScoreResult,
+            AiAnalysisResult aiAnalysisResult
+    ) {
+        AnalysisResponse.RiskResult riskResult =
+                new AnalysisResponse.RiskResult(
+                        riskScoreResult.riskLevel().name(),
+                        aiAnalysisResult.riskSummary()
+                );
+
+        try {
+            return objectMapper.writeValueAsString(riskResult);
+        } catch (JacksonException e) {
+            throw new ProjectException(
+                    GeneralErrorCode.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 }

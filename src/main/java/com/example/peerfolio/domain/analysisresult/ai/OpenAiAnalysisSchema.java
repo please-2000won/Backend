@@ -14,15 +14,10 @@ final class OpenAiAnalysisSchema {
                 "additionalProperties", false,
                 "properties", Map.of(
                         "riskResult", riskResultSchema(),
-                        "totalRiskScore", scoreSchema(),
-                        "analysisComment", Map.of(
-                                "type", "string",
-                                "minLength", 1
-                        )
+                        "analysisComment", analysisCommentSchema()
                 ),
                 "required", List.of(
                         "riskResult",
-                        "totalRiskScore",
                         "analysisComment"
                 )
         );
@@ -33,31 +28,21 @@ final class OpenAiAnalysisSchema {
                 "type", "object",
                 "additionalProperties", false,
                 "properties", Map.of(
-                        "riskLevel", Map.of(
-                                "type", "string",
-                                "enum", List.of(
-                                        "LOW",
-                                        "MEDIUM",
-                                        "HIGH"
-                                )
-                        ),
                         "summary", Map.of(
                                 "type", "string",
                                 "minLength", 1
                         )
                 ),
                 "required", List.of(
-                        "riskLevel",
                         "summary"
                 )
         );
     }
 
-    private static Map<String, Object> scoreSchema() {
+    private static Map<String, Object> analysisCommentSchema() {
         return Map.of(
-                "type", "integer",
-                "minimum", 0,
-                "maximum", 100
+                "type", "string",
+                "minLength", 1
         );
     }
 }
