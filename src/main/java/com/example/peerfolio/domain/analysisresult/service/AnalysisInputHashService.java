@@ -22,6 +22,9 @@ public class AnalysisInputHashService {
     private final FinancialProfileRepository financialProfileRepository;
     private final FinancialAssetRepository financialAssetRepository;
 
+    private static final String ANALYSIS_POLICY_VERSION =
+            "server-risk-score-v1";
+
     @Transactional(readOnly = true)
     public String generate(Long userId) {
         PeerProfileData profile = financialProfileRepository
@@ -42,6 +45,7 @@ public class AnalysisInputHashService {
     public String generate(PeerProfileData profile, PeerAssetData asset) {
         // 필드 순서를 고정해 동일한 금융정보는 항상 동일한 해시를 생성
         String source = String.join("|",
+                ANALYSIS_POLICY_VERSION,
                 profile.age().toString(),
                 profile.monthlyIncome().toString(),
                 profile.fixedExpense().toString(),
