@@ -31,7 +31,6 @@ public class AnalysisService {
     private final AnalysisInputHashService analysisInputHashService;
     private final ObjectMapper objectMapper;
     private final AnalysisExecutionService analysisExecutionService;
-    private final RiskScoreResult riskScoreResult;
     private final RiskScoreCalculator riskScoreCalculator;
 
     // 외부 OpenAI 응답 기다리는 동안 DB 트랜잭션 유지하지 않음
@@ -97,6 +96,7 @@ public class AnalysisService {
                             user.getId(),
                             preparation,
                             aiAnalysisResult,
+                            riskScoreResult,
                             benchmarkResultJson,
                             currentInputHash
                     );
