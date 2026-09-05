@@ -23,14 +23,10 @@ import java.text.BreakIterator;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
 public class OpenAiAnalysisClient implements AiAnalysisClient {
-
-    private static final Set<String> RISK_LEVELS =
-            Set.of("LOW", "MEDIUM", "HIGH");
 
     private static final int REQUIRED_PARAGRAPH_COUNT = 3;
     private static final int MAX_SENTENCE_COUNT = 5;
@@ -380,15 +376,8 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
 
             String normalizedAnalysisComment = validate(payload);
 
-            // riskResult 객체는 DB JSON 컬럼에 저장할 문자열로 변환
-            String riskResultJson =
-                    objectMapper.writeValueAsString(
-                            payload.riskResult()
-                    );
-
             return new AiAnalysisResult(
-                    riskResultJson,
-                    payload.totalRiskScore(),
+                    payload.riskResult().summary(),
                     normalizedAnalysisComment
             );
         } catch (JacksonException exception) {
@@ -399,27 +388,10 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
     private String validate(OpenAiAnalysisPayload payload) {
         if (payload == null
                 || payload.riskResult() == null
-                || payload.riskResult().riskLevel() == null
                 || payload.riskResult().summary() == null
                 || payload.riskResult().summary().isBlank()
-                || payload.totalRiskScore() == null
                 || payload.analysisComment() == null
                 || payload.analysisComment().isBlank()) {
-            throw invalidResponse();
-        }
-
-        int totalRiskScore = payload.totalRiskScore();
-        String riskLevel = payload.riskResult().riskLevel();
-
-        if (totalRiskScore < 0 || totalRiskScore > 100) {
-            throw invalidResponse();
-        }
-
-        if (!RISK_LEVELS.contains(riskLevel)) {
-            throw invalidResponse();
-        }
-
-        if (!isConsistentRiskLevel(riskLevel, totalRiskScore)) {
             throw invalidResponse();
         }
 
@@ -488,15 +460,6 @@ public class OpenAiAnalysisClient implements AiAnalysisClient {
         return new ProjectException(
                 OpenAiErrorCode.INVALID_RESPONSE
         );
-    }
-
-    private boolean isConsistentRiskLevel(String riskLevel, int score) {
-        return switch (riskLevel) {
-            case "LOW" -> score <= 33;
-            case "MEDIUM" -> score >= 34 && score <= 66;
-            case "HIGH" -> score >= 67;
-            default -> false;
-        };
     }
 
     private double calculateRatioDifference(
